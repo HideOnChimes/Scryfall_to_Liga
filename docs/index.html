@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conversor ManaBox → LigaMagic</title>
+  <meta name="description" content="Converta sua coleção do ManaBox (CSV) ou uma lista de cartas para o CSV de importação da LigaMagic. Grátis, direto no navegador.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="wrap">
+    <h1>Conversor <span>ManaBox → LigaMagic</span></h1>
+    <p class="lead">Transforme o export do ManaBox (ou uma lista de cartas) no CSV de importação da coleção da LigaMagic.
+      Tudo roda no seu navegador: o arquivo não é enviado para nenhum servidor.</p>
+  </header>
+
+  <main class="wrap">
+    <section class="card" id="input">
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept=".csv,.txt,text/csv,text/plain" hidden>
+        <strong>Arraste o arquivo aqui</strong>
+        <span>ou clique para escolher (.csv do ManaBox ou .txt com lista)</span>
+        <span class="fname" id="fname"></span>
+      </label>
+      <details>
+        <summary>…ou cole uma lista de cartas</summary>
+        <textarea id="paste" rows="8" placeholder="1 Bolg's Company [SCHOB]&#10;1 Gleaming Splendor (BCHOB) 239&#10;2 Lightning Bolt&#10;1 Sol Ring *F*"></textarea>
+      </details>
+      <div class="actions">
+        <button id="go" disabled>Converter</button>
+        <span class="status" id="status">Carregando edições…</span>
+      </div>
+      <div class="progress" id="progress" hidden><div id="bar"></div></div>
+    </section>
+
+    <!-- espaço reservado para anúncio -->
+
+    <section class="card" id="result" hidden>
+      <div class="result-head">
+        <div>
+          <h2 id="summary"></h2>
+          <label class="toggle"><input type="checkbox" id="onlyWarn"> mostrar só as linhas para conferir</label>
+        </div>
+        <button id="download">Baixar CSV da Liga</button>
+      </div>
+      <div class="table-wrap"><table id="table"></table></div>
+    </section>
+
+    <section class="card help">
+      <h2>Como usar</h2>
+      <ol>
+        <li>No ManaBox: <em>Coleção → ⋯ → Exportar → CSV</em>. Ou monte uma lista de texto (uma carta por linha).</li>
+        <li>Solte o arquivo aqui e clique em <strong>Converter</strong>.</li>
+        <li>Confira as linhas marcadas com <span class="tag">VERIFICAR</span> (coluna Comentário).</li>
+        <li>Na LigaMagic: <em>Minha Coleção → Importar</em> e envie o CSV baixado.</li>
+      </ol>
+      <h3>Formatos de lista aceitos</h3>
+      <pre>1 Nome da Carta (SIGLA) 123
+1 Nome da Carta [SIGLA]
+1 [SIGLA] Nome da Carta
+1 Nome da Carta          ← sem edição: usa a impressão padrão do Scryfall
+1 Nome da Carta *F*      ← foil</pre>
+      <p>A sigla pode ser a da Liga (ex.: <code>SCHOB</code>) ou a do Scryfall (ex.: <code>HOB</code>).</p>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <p id="dataInfo"></p>
+    <p>Site não oficial, sem vínculo com a LigaMagic, o ManaBox ou a Wizards of the Coast.
+      Dados de cartas: <a href="https://scryfall.com" rel="noopener">Scryfall</a>.
+      Magic: The Gathering é marca da Wizards of the Coast; conteúdo de fã sob a
+      <a href="https://company.wizards.com/pt-br/legal/fancontentpolicy" rel="noopener">Fan Content Policy</a>.</p>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
