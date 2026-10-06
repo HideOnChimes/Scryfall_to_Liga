@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Liga, convertManaBox, convertList, parseCSV, scryfallClient } from "../docs/conv.js";
+import { Liga, convertCSV, convertList, parseCSV, scryfallClient } from "../docs/conv.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "docs");
 const dir = process.argv[2] || path.join(root, "..", "..");
@@ -15,8 +15,16 @@ const loadJSON = async (p) => JSON.parse(fs.readFileSync(path.join(root, p), "ut
 const ua = { "User-Agent": "conversor-liga-web-test/1.0" };
 let scryfall = scryfallClient((url, o = {}) => fetch(url, { ...o, headers: { ...o.headers, ...ua } }));
 if (!live) {
-  const cache = JSON.parse(fs.readFileSync(path.join(dir, ".cache_liga", "scryfall.json"), "utf8"));
-  scryfall = { ...scryfall, byIds: async (ids) => new Map(ids.filter((id) => cache[id]).map((id) => [id, cache[id]])) };
+  const cacheFile = [dir, path.join(dir, "..")].map((d) => path.join(d, ".cache_liga", "scryfall.json")).find(fs.existsSync);
+  const cache = JSON.parse(fs.readFileSync(cacheFile, "utf8"));
+  const real = scryfall.collection.bind(scryfall);
+  // ids saem do cache do conv.py; buscas por edicao/nome continuam indo na API
+  scryfall.collection = async (idents, cb) => {
+    const out = idents.map((idf) => (idf?.id && cache[idf.id] ? { id: idf.id, ...cache[idf.id] } : null));
+    const rest = idents.map((idf, i) => (out[i] ? null : idf));
+    if (rest.some(Boolean)) (await real(rest, cb)).forEach((c, i) => { if (c) out[i] = c; });
+    return out;
+  };
 }
 
 const liga = await Liga.load(loadJSON);
@@ -27,7 +35,7 @@ for (const f of fs.readdirSync(dir)) {
   const expected = path.join(dir, m[2] ? "Hobbit Colecao - Liga.csv" : `${m[1]} - Liga.csv`);
   if (!fs.existsSync(expected)) continue;
   const text = fs.readFileSync(path.join(dir, f), "utf8");
-  const rows = f.endsWith(".csv") ? await convertManaBox(text, { liga, scryfall }) : await convertList(text, { liga, scryfall });
+  const rows = f.endsWith(".csv") ? await convertCSV(text, { liga, scryfall }) : await convertList(text, { liga, scryfall });
   const got = rows.slice(1).map((r) => r.slice(0, 12).join("|"));
   const exp = parseCSV(fs.readFileSync(expected, "utf8")).map((r) => Object.values(r).slice(0, 12).join("|"));
   let bad = 0;

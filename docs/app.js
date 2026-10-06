@@ -1,4 +1,4 @@
-import { Liga, scryfallClient, convertManaBox, convertList, looksLikeManaBox, toCSV, LIGA_HEADER } from "./conv.js";
+import { Liga, scryfallClient, convertCSV, convertList, looksLikeCSV, toCSV, LIGA_HEADER } from "./conv.js";
 
 const $ = (id) => document.getElementById(id);
 const loadJSON = async (p) => {
@@ -58,7 +58,7 @@ $("go").addEventListener("click", async () => {
   };
   try {
     const ctx = { liga, scryfall: scryfallClient(), onProgress };
-    rows = looksLikeManaBox(text) ? await convertManaBox(text, ctx) : await convertList(text, ctx);
+    rows = looksLikeCSV(text) ? await convertCSV(text, ctx) : await convertList(text, ctx);
     render();
     setStatus("Pronto.");
   } catch (e) {

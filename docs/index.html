@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Conversor ManaBox → LigaMagic</title>
-  <meta name="description" content="Converta sua coleção do ManaBox (CSV) ou uma lista de cartas para o CSV de importação da LigaMagic. Grátis, direto no navegador.">
+  <title>Conversor de Coleção → LigaMagic</title>
+  <meta name="description" content="Converta sua coleção do ManaBox, Scryfall, Moxfield, Deckbox, Dragon Shield ou TCGplayer (CSV), ou uma lista de cartas, para o CSV de importação da LigaMagic. Grátis, direto no navegador.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="wrap">
-    <h1>Conversor <span>ManaBox → LigaMagic</span></h1>
-    <p class="lead">Transforme o export do ManaBox (ou uma lista de cartas) no CSV de importação da coleção da LigaMagic.
+    <h1>Conversor de coleção <span>→ LigaMagic</span></h1>
+    <p class="lead">Transforme o CSV do ManaBox, Scryfall, Moxfield, Deckbox, Dragon Shield ou TCGplayer (ou uma lista de cartas) no CSV de importação da coleção da LigaMagic.
       Tudo roda no seu navegador: o arquivo não é enviado para nenhum servidor.</p>
   </header>
 
@@ -20,7 +20,7 @@
       <label class="drop" id="drop">
         <input type="file" id="file" accept=".csv,.txt,text/csv,text/plain" hidden>
         <strong>Arraste o arquivo aqui</strong>
-        <span>ou clique para escolher (.csv do ManaBox ou .txt com lista)</span>
+        <span>ou clique para escolher (.csv de um app de coleção ou .txt com lista)</span>
         <span class="fname" id="fname"></span>
       </label>
       <details>
@@ -50,11 +50,20 @@
     <section class="card help">
       <h2>Como usar</h2>
       <ol>
-        <li>No ManaBox: <em>Coleção → ⋯ → Exportar → CSV</em>. Ou monte uma lista de texto (uma carta por linha).</li>
+        <li>Exporte a coleção em CSV do seu app (ManaBox, Moxfield, Deckbox, Dragon Shield, TCGplayer…) ou de uma busca do Scryfall. Ou monte uma lista de texto, uma carta por linha.</li>
         <li>Solte o arquivo aqui e clique em <strong>Converter</strong>.</li>
         <li>Confira as linhas marcadas com <span class="tag">VERIFICAR</span> (coluna Comentário).</li>
         <li>Na LigaMagic: <em>Minha Coleção → Importar</em> e envie o CSV baixado.</li>
       </ol>
+      <h3>CSVs aceitos</h3>
+      <p>O site reconhece as colunas automaticamente, inclusive em planilhas com cabeçalho em português e separadas por <code>;</code>.
+        O melhor resultado vem de CSVs com <strong>Scryfall ID</strong> (ManaBox, Scryfall); nos demais a carta é encontrada por
+        edição + número, ou pelo nome.</p>
+      <ul>
+        <li><strong>ManaBox</strong>: completo (quantidade, foil, condição, idioma).</li>
+        <li><strong>Moxfield, Deckbox, Dragon Shield, TCGplayer</strong>: completo, busca por edição + número.</li>
+        <li><strong>Scryfall</strong> (export de busca): sem quantidade, foil e condição; usa 1, normal e NM.</li>
+      </ul>
       <h3>Formatos de lista aceitos</h3>
       <pre>1 Nome da Carta (SIGLA) 123
 1 Nome da Carta [SIGLA]

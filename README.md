@@ -1,6 +1,6 @@
-# Conversor ManaBox → LigaMagic
+# Conversor de coleção → LigaMagic
 
-Site estático que converte o export CSV do ManaBox (ou uma lista de cartas em texto) para o CSV de importação de coleção da LigaMagic. A conversão roda inteira no navegador, então o arquivo do usuário nunca vai para um servidor.
+Site estático que converte o CSV de coleção do ManaBox, Scryfall, Moxfield, Deckbox, Dragon Shield ou TCGplayer (ou uma lista de cartas em texto) para o CSV de importação de coleção da LigaMagic. A conversão roda inteira no navegador, então o arquivo do usuário nunca vai para um servidor.
 
 ## Como funciona
 
@@ -11,6 +11,7 @@ Site estático que converte o export CSV do ManaBox (ou uma lista de cartas em t
   - `data/cards/<id>.json` guarda as cartas de cada edição.
 - `scripts/build_data.py` raspa a LigaMagic e gera `docs/data`. O GitHub Actions roda esse script uma vez por dia.
 - O Scryfall é consultado direto do navegador, pelo endpoint `/cards/collection`, com até 75 cartas por requisição.
+- As colunas do CSV são reconhecidas pelo nome (veja `COLS` em `conv.js`). A carta é procurada pelo melhor dado disponível, nesta ordem: Scryfall ID, edição + número, nome + edição e, por último, só o nome. Siglas da Liga que o Scryfall não conhece (ex.: `schob`) são procuradas direto nos dados da Liga.
 
 ### Ritmo do scraping
 
@@ -48,7 +49,13 @@ Depois abra http://localhost:8000.
 Para testar a conversão contra os CSVs gerados pelo `conv.py`:
 
 ```bash
-node scripts/test_node.mjs ..
+node scripts/test_node.mjs ../Coleções
+```
+
+Para testar os formatos dos outros apps (gerados a partir de um CSV do ManaBox):
+
+```bash
+node scripts/test_formats.mjs ../Coleções/Hobbit.csv
 ```
 
 Para importar o cache do `conv.py` sem acessar a Liga:

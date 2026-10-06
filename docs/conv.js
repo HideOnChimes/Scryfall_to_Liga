@@ -1,4 +1,4 @@
-// Conversao ManaBox/lista -> CSV de importacao da LigaMagic.
+// Conversao CSV de colecao (ManaBox, Scryfall, Moxfield...) ou lista -> CSV de importacao da LigaMagic.
 // Porta do conv.py. Roda no navegador e no Node (para testes): quem usa injeta
 // `loadJSON(path)` (dados estaticos em docs/data) e `scryfall` (consultas a API).
 
@@ -6,8 +6,6 @@ export const LIGA_HEADER = ["Edicao (PTBR)", "Edicao (EN)", "Edicao (Sigla)", "C
   "Qualidade (M NM SP MP HP D)", "Idioma (BR EN DE ES FR IT JP KO RU TW)", "Raridade (M R U C)",
   "Cor (W U B R G M A L)", "Extras", "Card #", "Comentario"];
 
-const QUALITY = { mint: "M", near_mint: "NM", excellent: "SP", good: "SP", light_played: "SP",
-  played: "MP", poor: "HP", damaged: "D" };
 const LANG = { en: "EN", pt: "PT", de: "DE", es: "ES", fr: "FR", it: "IT", ja: "JP", ko: "KO",
   ru: "RU", zht: "TW", zhs: "CS", ph: "PH" };
 const RARITY = { mythic: "M", rare: "R", uncommon: "U", common: "C", special: "S", bonus: "S" };
@@ -200,24 +198,51 @@ function slim(j) {
   return o;
 }
 
+const sameName = (c, n) => norm(c.name) === norm(n) || (c.faces || []).some((f) => norm(f) === norm(n));
+
+// a API nao garante a ordem da resposta, entao cada identificador e casado de volta pelo conteudo
+function matches(c, idf) {
+  if (idf.id) return c.id === idf.id;
+  if (idf.set && c.set !== idf.set) return false;
+  if (idf.collector_number) return c.collector_number.toLowerCase() === idf.collector_number.toLowerCase();
+  return sameName(c, idf.name);
+}
+
 export function scryfallClient(fetchFn = fetch) {
+  let sets = null;
   return {
-    // ate 75 ids por requisicao (limite da API)
-    async byIds(ids, onProgress) {
-      const out = new Map();
-      const uniq = [...new Set(ids)];
-      for (let i = 0; i < uniq.length; i += 75) {
-        const batch = uniq.slice(i, i + 75);
+    // identificadores {id} | {set, collector_number} | {name, set} | {name}; ate 75 por requisicao.
+    // Devolve um array alinhado com a entrada (null = nao encontrada).
+    async collection(idents, onProgress) {
+      const out = idents.map(() => null);
+      const todo = idents.map((idf, i) => [idf, i]).filter(([idf]) => idf);
+      for (let i = 0; i < todo.length; i += 75) {
+        const batch = todo.slice(i, i + 75);
         const r = await fetchFn(`${SCRY}/cards/collection`, {
           method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify({ identifiers: batch.map((id) => ({ id })) }),
+          body: JSON.stringify({ identifiers: batch.map(([idf]) => idf) }),
         });
         if (!r.ok) throw new Error(`Scryfall respondeu ${r.status}`);
-        for (const c of (await r.json()).data) out.set(c.id, slim(c));
-        onProgress?.(Math.min(i + 75, uniq.length), uniq.length);
+        const cards = (await r.json()).data.map(slim);
+        for (const [idf, k] of batch) out[k] = cards.find((c) => matches(c, idf)) || null;
+        onProgress?.(Math.min(i + 75, todo.length), todo.length);
         await pause(120);
       }
       return out;
+    },
+    async byIds(ids, onProgress) {
+      const found = await this.collection(ids.map((id) => ({ id })), onProgress);
+      return new Map(found.filter(Boolean).map((c) => [c.id, c]));
+    },
+    // lista de sets do Scryfall, para traduzir nome do set (Deckbox, TCGplayer) em codigo
+    async sets() {
+      if (!sets) {
+        const r = await fetchFn(`${SCRY}/sets`, { headers: { Accept: "application/json" } });
+        if (!r.ok) throw new Error(`Scryfall respondeu ${r.status}`);
+        const data = (await r.json()).data;
+        sets = { codes: new Set(data.map((s) => s.code)), byName: new Map(data.map((s) => [norm(s.name), s.code])) };
+      }
+      return sets;
     },
     async named(name, set) {
       const q = new URLSearchParams({ exact: name });
@@ -230,17 +255,26 @@ export function scryfallClient(fetchFn = fetch) {
 }
 
 // ---------------------------------------------------------------- entrada
+function delimiter(text) {
+  const sep = text.match(/^"?sep=(.)"?\r?\n/i); // Dragon Shield (e Excel) comecam com "sep=,"
+  if (sep) return [sep[1], text.slice(sep[0].length)];
+  const first = text.split(/\r?\n/, 1)[0];
+  const count = (ch) => first.split(ch).length;
+  const best = [",", ";", "\t"].sort((a, b) => count(b) - count(a))[0]; // Excel em PT-BR salva com ";"
+  return [best, text];
+}
+
 export function parseCSV(text) {
   const rows = [];
-  let row = [], field = "", q = false;
-  text = text.replace(/^﻿/, "");
+  let row = [], field = "", q = false, delim;
+  [delim, text] = delimiter(text.replace(/^﻿/, ""));
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
     if (q) {
       if (ch === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; }
       else field += ch;
     } else if (ch === '"') q = true;
-    else if (ch === ",") { row.push(field); field = ""; }
+    else if (ch === delim) { row.push(field); field = ""; }
     else if (ch === "\n" || ch === "\r") {
       if (ch === "\r" && text[i + 1] === "\n") i++;
       row.push(field); rows.push(row); row = []; field = "";
@@ -276,7 +310,68 @@ export function parseList(text) {
   return out;
 }
 
-export const looksLikeManaBox = (text) => /scryfall id/i.test(text.split(/\r?\n/, 1)[0]);
+// ---------------------------------------------------------------- CSV de qualquer app
+// colunas reconhecidas (nome normalizado: minusculo, sem acento, so letras e numeros), em ordem de
+// preferencia. ManaBox, Scryfall, Moxfield, Deckbox, Dragon Shield, TCGplayer, planilhas em PT...
+const COLS = {
+  id: ["scryfallid"],
+  qty: ["quantity", "count", "qty", "amount", "quantidade", "qtd"],
+  name: ["simplename", "name", "cardname", "card", "nome", "carta"], // TCGplayer: "Simple Name" vem sem "(Showcase)"
+  setCode: ["setcode", "editioncode"],
+  setName: ["setname"],
+  setAny: ["set", "edition", "expansion", "edicao", "colecao"], // codigo ou nome, depende do app
+  number: ["collectornumber", "cardnumber", "number", "cn", "numero"],
+  foil: ["foil", "printing", "finish"],
+  cond: ["condition", "condicao", "qualidade"],
+  lang: ["language", "lang", "idioma"],
+};
+const COND = { mint: "M", m: "M", nearmint: "NM", nm: "NM", quasenovo: "NM", excellent: "SP", ex: "SP", good: "SP",
+  lightplayed: "SP", lightlyplayed: "SP", goodlightlyplayed: "SP", lp: "SP", sp: "SP", played: "MP",
+  moderatelyplayed: "MP", mp: "MP", poor: "HP", heavilyplayed: "HP", hp: "HP", damaged: "D", d: "D" };
+const LANG_NAMES = { english: "EN", ingles: "EN", portuguese: "PT", portugues: "PT", portuguesebrazil: "PT", brazilianportuguese: "PT", br: "PT",
+  german: "DE", spanish: "ES", french: "FR", italian: "IT", japanese: "JP", jp: "JP", korean: "KO", russian: "RU",
+  chinesetraditional: "TW", traditionalchinese: "TW", chinesesimplified: "CS", simplifiedchinese: "CS", phyrexian: "PH" };
+
+const colKey = (h) => norm(h).replace(/ /g, "");
+
+function mapLang(v) {
+  v = (v || "").trim().toLowerCase();
+  return LANG[v] || LANG_NAMES[colKey(v)] || null;
+}
+
+const isFoil = (v) => /foil|etched|^(true|yes|sim|s|1)$/i.test(v || "") && !/non.?foil|normal/i.test(v);
+
+function readRow(row) {
+  const pick = (aliases) => { for (const a of aliases) if (row[a]?.trim()) return row[a].trim(); return ""; };
+  return {
+    id: pick(COLS.id), name: pick(COLS.name), number: pick(COLS.number),
+    setCode: pick(COLS.setCode).toLowerCase(), setName: pick(COLS.setName), setAny: pick(COLS.setAny),
+    qty: String(parseInt(pick(COLS.qty), 10) || 1),
+    foil: isFoil(pick(COLS.foil)),
+    quality: COND[colKey(pick(COLS.cond))] || "NM",
+    lang: mapLang(pick(COLS.lang)),
+  };
+}
+
+// "Edition"/"Set" e codigo no Moxfield/Scryfall e nome no Deckbox/TCGplayer
+function resolveSet(r, sets) {
+  if (r.setCode) return r.setCode;
+  if (!sets) return "";
+  for (const v of [r.setAny, r.setName]) {
+    if (!v) continue;
+    if (sets.codes.has(v.toLowerCase())) return v.toLowerCase();
+    const code = sets.byName.get(norm(v));
+    if (code) return code;
+  }
+  return "";
+}
+
+export function looksLikeCSV(text) {
+  const rows = parseCSV(text.split(/\r?\n/).slice(0, 3).join("\n") + "\n");
+  if (!rows.length) return false;
+  const keys = new Set(Object.keys(rows[0]).map(colKey));
+  return COLS.id.some((k) => keys.has(k)) || COLS.name.some((k) => keys.has(k));
+}
 
 // ---------------------------------------------------------------- conversao
 function rowFromHit(ed, c, scry) {
@@ -317,25 +412,65 @@ async function convertScry(liga, scry, { qty, quality, lang, foil }) {
   return emit(rowFromMiss(cands, scry), qty, quality, lang, extras, `VERIFICAR: ${why} (${ref})`);
 }
 
-export async function convertManaBox(text, { liga, scryfall, onProgress }) {
-  const rows = parseCSV(text);
-  const ids = rows.map((r) => r["Scryfall ID"]).filter(Boolean);
-  const scry = await scryfall.byIds(ids, (d, t) => onProgress?.("scryfall", d, t));
+// identificador mais preciso disponivel; cada falha cai para o proximo
+function identifiers(r) {
+  const out = [];
+  if (r.id) out.push({ id: r.id });
+  if (r.set && r.number) out.push({ set: r.set, collector_number: r.number });
+  if (r.set && r.name) out.push({ name: r.name, set: r.set });
+  if (r.name) out.push({ name: r.name });
+  return out;
+}
+
+export async function convertCSV(text, { liga, scryfall, onProgress }) {
+  const recs = parseCSV(text).map((row) =>
+    readRow(Object.fromEntries(Object.entries(row).map(([k, v]) => [colKey(k), v]))));
+  const needSets = recs.some((r) => !r.id && !r.setCode && (r.setAny || r.setName));
+  const sets = needSets ? await scryfall.sets() : null;
+  for (const r of recs) {
+    r.set = resolveSet(r, sets);
+    r.tries = identifiers(r);
+    r.scry = null;
+  }
+  // rodadas: todas as cartas pelo melhor identificador; as que falharem tentam o seguinte
+  for (let round = 0; round < 4; round++) {
+    const pending = recs.filter((r) => !r.scry && r.tries[round]);
+    if (!pending.length) break;
+    const found = await scryfall.collection(pending.map((r) => r.tries[round]),
+      (d, t) => onProgress?.("scryfall", d, t));
+    pending.forEach((r, i) => { if (found[i]) { r.scry = found[i]; r.via = r.tries[round]; } });
+  }
+
   const out = [LIGA_HEADER];
-  for (let i = 0; i < rows.length; i++) {
-    const r = rows[i];
-    onProgress?.("liga", i + 1, rows.length, r.Name);
-    const s = scry.get(r["Scryfall ID"]);
-    const lang = LANG[(r.Language || s?.lang || "en").toLowerCase()] || "EN";
-    const opts = { qty: r.Quantity || "1", quality: QUALITY[r.Condition] || "NM", lang,
-      foil: (r.Foil || "normal") !== "normal" };
+  for (let i = 0; i < recs.length; i++) {
+    const r = recs[i], s = r.scry;
+    onProgress?.("liga", i + 1, recs.length, r.name);
+    const lang = r.lang || LANG[(s?.lang || "en").toLowerCase()] || "EN";
+    const opts = { qty: r.qty, quality: r.quality, lang, foil: r.foil };
+    // sigla da Liga que o Scryfall nao conhece (ex.: "schob"): procura direto na edicao da Liga
+    const rawSet = r.setCode || r.setAny;
+    if (rawSet && (!s || !(r.via.id || r.via.set))) {
+      const direct = await liga.findDirect(rawSet, r.name, r.number);
+      if (direct) {
+        out.push(emit(rowFromHit(direct[0], direct[1], s), r.qty, r.quality, lang, r.foil ? ["Foil"] : [], ""));
+        continue;
+      }
+    }
     if (!s) {
-      out.push(["", r["Set name"] || "", r["Set code"] || "", "", r.Name, opts.qty, opts.quality, lang,
-        RARITY[r.Rarity] || "", "", opts.foil ? "Foil" : "", r["Collector number"] || "",
-        "VERIFICAR: Scryfall ID nao encontrado"]);
+      out.push(["", r.setName || r.setAny, r.set || r.setCode, "", r.name, r.qty, r.quality, lang, "", "",
+        r.foil ? "Foil" : "", r.number, "VERIFICAR: carta nao encontrada no Scryfall"]);
       continue;
     }
-    out.push(await convertScry(liga, s, opts));
+    const row = await convertScry(liga, s, opts);
+    // achou so pelo nome: a impressao pode nao ser a que a pessoa tem
+    if (!row[12] && r.via.name && !r.via.set) {
+      row[12] = r.set || r.setAny || r.setName
+        ? `VERIFICAR: edicao/numero nao encontrados (${[r.set || r.setAny || r.setName, r.number].filter(Boolean).join(" #")}), usada ${row[2]}`
+        : `VERIFICAR: edicao nao informada, usada ${row[2]}`;
+    } else if (!row[12] && r.via.name && r.number) {
+      row[12] = `VERIFICAR: numero ${r.number} nao encontrado no Scryfall, usada ${row[2]} #${row[11]}`;
+    }
+    out.push(row);
   }
   return out;
 }

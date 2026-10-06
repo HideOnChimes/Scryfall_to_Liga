@@ -95,6 +95,6 @@ pre {
   padding: 12px; overflow-x: auto; font-size: .85rem;
 }
 code { font-size: .9em; }
-.help ol { padding-left: 20px; margin: 0; }
+.help ol, .help ul { padding-left: 20px; margin: 0; }
 
 footer { color: var(--muted); font-size: .82rem; padding-bottom: 40px; }
