@@ -99,8 +99,7 @@ footer { color: var(--muted); font-size: .82rem; padding-bottom: 40px; }
   --p-text: #f3f1ec;
   --p-muted: #a9a49b;
   --p-field: #151311;
-  background: var(--p-bg)
-    repeating-conic-gradient(rgba(255,255,255,.025) 0 25%, transparent 0 50%) 0 0 / 24px 24px;
+  background: var(--p-bg);
   color: var(--p-text);
   border-radius: 14px;
   padding: 36px 32px 24px;
@@ -110,24 +109,26 @@ footer { color: var(--muted); font-size: .82rem; padding-bottom: 40px; }
   transition: outline-color .15s;
 }
 .panel.over { outline-color: var(--accent); }
-.panel-row { display: flex; align-items: center; justify-content: space-around; gap: 28px; flex-wrap: wrap; }
+/* botao e seletores com a mesma altura e alinhados pelo topo; a dica fica embaixo do botao */
+.panel-row { display: flex; align-items: flex-start; justify-content: space-around; gap: 20px 28px; flex-wrap: wrap; }
+.pick-btns, .formats select { height: 56px; }
 .pick-btns { display: flex; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
 .pick-main, .pick-icon {
   background: var(--accent); color: #fff; cursor: pointer; border: 0; border-radius: 0;
   display: flex; align-items: center; font: inherit; font-weight: 700;
 }
-.pick-main { padding: 16px 26px; font-size: 1.05rem; }
+.pick-main { padding: 0 26px; font-size: 1.05rem; }
 .pick-icon { padding: 0 16px; border-left: 1px solid rgba(255,255,255,.18); }
 .pick-main:hover, .pick-icon:hover { filter: brightness(1.1); }
 .pick-icon svg { width: 22px; height: 22px; fill: #fff; }
 .hint { color: var(--p-muted); font-size: .86rem; margin: 10px 0 0; }
 .hint.file { color: var(--p-text); font-weight: 600; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.formats { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.formats { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center; min-height: 56px; }
 .formats select {
   appearance: none; background: var(--p-field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23ccc' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 14px center / 12px;
   color: var(--p-text); border: 0; border-radius: 6px;
-  font: 800 1.25rem/1 system-ui, sans-serif; padding: 16px 42px 16px 18px; cursor: pointer; min-width: 170px;
+  font: 800 1.2rem/normal system-ui, sans-serif; padding: 0 42px 0 18px; cursor: pointer; min-width: 170px;
 }
 .formats select:focus-visible { outline: 2px solid var(--accent); }
 .para { font-size: 1.5rem; font-weight: 700; }
@@ -138,6 +139,7 @@ footer { color: var(--muted); font-size: .82rem; padding-bottom: 40px; }
 .panel .progress { background: #3a3631; }
 @media (max-width: 600px) {
   .panel { padding: 24px 16px 18px; }
-  .pick-main { padding: 14px 18px; }
-  .formats select { min-width: 0; font-size: 1.05rem; padding: 14px 36px 14px 14px; }
+  .pick-main { padding: 0 18px; }
+  .pick-btns, .formats select { height: 50px; }
+  .formats select { min-width: 0; font-size: 1.05rem; padding: 0 36px 0 14px; }
 }
