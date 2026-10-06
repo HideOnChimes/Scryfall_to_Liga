@@ -6,7 +6,7 @@ export const LIGA_HEADER = ["Edicao (PTBR)", "Edicao (EN)", "Edicao (Sigla)", "C
   "Qualidade (M NM SP MP HP D)", "Idioma (BR EN DE ES FR IT JP KO RU TW)", "Raridade (M R U C)",
   "Cor (W U B R G M A L)", "Extras", "Card #", "Comentario"];
 
-const LANG = { en: "EN", pt: "PT", de: "DE", es: "ES", fr: "FR", it: "IT", ja: "JP", ko: "KO",
+export const LANG = { en: "EN", pt: "PT", de: "DE", es: "ES", fr: "FR", it: "IT", ja: "JP", ko: "KO",
   ru: "RU", zht: "TW", zhs: "CS", ph: "PH" };
 const RARITY = { mythic: "M", rare: "R", uncommon: "U", common: "C", special: "S", bonus: "S" };
 // codigos internos da Liga (descobertos comparando com um export real)
@@ -198,7 +198,7 @@ function slim(j) {
   return o;
 }
 
-const sameName = (c, n) => norm(c.name) === norm(n) || (c.faces || []).some((f) => norm(f) === norm(n));
+export const sameName = (c, n) => norm(c.name) === norm(n) || (c.faces || []).some((f) => norm(f) === norm(n));
 
 // a API nao garante a ordem da resposta, entao cada identificador e casado de volta pelo conteudo
 function matches(c, idf) {
@@ -208,8 +208,18 @@ function matches(c, idf) {
   return sameName(c, idf.name);
 }
 
+// /cards/collection e /cards/named aceitam ~2 requisicoes por segundo; 429 = espera e tenta de novo
+const GAP = 550;
+
 export function scryfallClient(fetchFn = fetch) {
   let sets = null;
+  const call = async (url, opts) => {
+    for (let i = 0; ; i++) {
+      const r = await fetchFn(url, opts);
+      if (r.status !== 429 || i === 4) return r;
+      await pause(3000 * (i + 1));
+    }
+  };
   return {
     // identificadores {id} | {set, collector_number} | {name, set} | {name}; ate 75 por requisicao.
     // Devolve um array alinhado com a entrada (null = nao encontrada).
@@ -218,7 +228,7 @@ export function scryfallClient(fetchFn = fetch) {
       const todo = idents.map((idf, i) => [idf, i]).filter(([idf]) => idf);
       for (let i = 0; i < todo.length; i += 75) {
         const batch = todo.slice(i, i + 75);
-        const r = await fetchFn(`${SCRY}/cards/collection`, {
+        const r = await call(`${SCRY}/cards/collection`, {
           method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
           body: JSON.stringify({ identifiers: batch.map(([idf]) => idf) }),
         });
@@ -226,7 +236,7 @@ export function scryfallClient(fetchFn = fetch) {
         const cards = (await r.json()).data.map(slim);
         for (const [idf, k] of batch) out[k] = cards.find((c) => matches(c, idf)) || null;
         onProgress?.(Math.min(i + 75, todo.length), todo.length);
-        await pause(120);
+        await pause(GAP);
       }
       return out;
     },
@@ -247,8 +257,8 @@ export function scryfallClient(fetchFn = fetch) {
     async named(name, set) {
       const q = new URLSearchParams({ exact: name });
       if (set) q.set("set", set);
-      await pause(120);
-      const r = await fetchFn(`${SCRY}/cards/named?${q}`, { headers: { Accept: "application/json" } });
+      await pause(GAP);
+      const r = await call(`${SCRY}/cards/named?${q}`, { headers: { Accept: "application/json" } });
       return r.ok ? slim(await r.json()) : null;
     },
   };
@@ -325,23 +335,23 @@ const COLS = {
   cond: ["condition", "condicao", "qualidade"],
   lang: ["language", "lang", "idioma"],
 };
-const COND = { mint: "M", m: "M", nearmint: "NM", nm: "NM", quasenovo: "NM", excellent: "SP", ex: "SP", good: "SP",
+export const COND = { mint: "M", m: "M", nearmint: "NM", nm: "NM", quasenovo: "NM", excellent: "SP", ex: "SP", good: "SP",
   lightplayed: "SP", lightlyplayed: "SP", goodlightlyplayed: "SP", lp: "SP", sp: "SP", played: "MP",
   moderatelyplayed: "MP", mp: "MP", poor: "HP", heavilyplayed: "HP", hp: "HP", damaged: "D", d: "D" };
 const LANG_NAMES = { english: "EN", ingles: "EN", portuguese: "PT", portugues: "PT", portuguesebrazil: "PT", brazilianportuguese: "PT", br: "PT",
   german: "DE", spanish: "ES", french: "FR", italian: "IT", japanese: "JP", jp: "JP", korean: "KO", russian: "RU",
-  chinesetraditional: "TW", traditionalchinese: "TW", chinesesimplified: "CS", simplifiedchinese: "CS", phyrexian: "PH" };
+  tw: "TW", cs: "CS", chinesetraditional: "TW", traditionalchinese: "TW", chinesesimplified: "CS", simplifiedchinese: "CS", phyrexian: "PH" };
 
-const colKey = (h) => norm(h).replace(/ /g, "");
+export const colKey = (h) => norm(h).replace(/ /g, "");
 
-function mapLang(v) {
+export function mapLang(v) {
   v = (v || "").trim().toLowerCase();
   return LANG[v] || LANG_NAMES[colKey(v)] || null;
 }
 
-const isFoil = (v) => /foil|etched|^(true|yes|sim|s|1)$/i.test(v || "") && !/non.?foil|normal/i.test(v);
+export const isFoil = (v) => /foil|etched|^(true|yes|sim|s|1)$/i.test(v || "") && !/non.?foil|normal/i.test(v);
 
-function readRow(row) {
+export function readRow(row) {
   const pick = (aliases) => { for (const a of aliases) if (row[a]?.trim()) return row[a].trim(); return ""; };
   return {
     id: pick(COLS.id), name: pick(COLS.name), number: pick(COLS.number),
@@ -354,7 +364,7 @@ function readRow(row) {
 }
 
 // "Edition"/"Set" e codigo no Moxfield/Scryfall e nome no Deckbox/TCGplayer
-function resolveSet(r, sets) {
+export function resolveSet(r, sets) {
   if (r.setCode) return r.setCode;
   if (!sets) return "";
   for (const v of [r.setAny, r.setName]) {
@@ -413,7 +423,7 @@ async function convertScry(liga, scry, { qty, quality, lang, foil }) {
 }
 
 // identificador mais preciso disponivel; cada falha cai para o proximo
-function identifiers(r) {
+export function identifiers(r) {
   const out = [];
   if (r.id) out.push({ id: r.id });
   if (r.set && r.number) out.push({ set: r.set, collector_number: r.number });

@@ -1,12 +1,14 @@
-# Conversor de coleção → LigaMagic
+# Conversor de coleção de Magic
 
-Site estático que converte o CSV de coleção do ManaBox, Scryfall, Moxfield, Deckbox, Dragon Shield ou TCGplayer (ou uma lista de cartas em texto) para o CSV de importação de coleção da LigaMagic. A conversão roda inteira no navegador, então o arquivo do usuário nunca vai para um servidor.
+Site estático que converte coleções de Magic entre formatos: de ManaBox, Scryfall, Moxfield, Deckbox, Dragon Shield, TCGplayer, LigaMagic ou lista de texto para LigaMagic, ManaBox, Moxfield, Scryfall ou lista de texto. A conversão roda inteira no navegador, então o arquivo do usuário nunca vai para um servidor.
 
 ## Como funciona
 
 - `docs/` é o site publicado no GitHub Pages.
   - `conv.js` tem a lógica de conversão (é a porta do `conv.py` original).
-  - `app.js` cuida da interface.
+  - `formats.js` detecta o formato de entrada e gera as saídas para os outros apps (inclusive LigaMagic → ManaBox).
+  - `app.js` cuida da interface e do Google Drive.
+  - `config.js` guarda as credenciais do Google Drive.
   - `data/edicoes.json` lista as edições da Liga. O campo `s` indica a data em que as cartas daquela edição foram baixadas.
   - `data/cards/<id>.json` guarda as cartas de cada edição.
 - `scripts/build_data.py` raspa a LigaMagic e gera `docs/data`. O GitHub Actions roda esse script uma vez por dia.
@@ -38,6 +40,28 @@ Quando uma carta cai numa edição ainda não indexada, o site marca a linha com
 4. O push dispara a publicação. O site fica em `https://SEU_USUARIO.github.io/conversor-liga/`.
 5. Para indexar uma edição na hora: **Actions → Atualizar dados e publicar → Run workflow**, preenchendo o campo `only` (exemplo: `hob tla`).
 
+## Google Drive
+
+O botão do Google Drive só funciona depois de criar credenciais no Google Cloud. Sem elas, o botão avisa que não está configurado e o resto do site funciona normalmente. É tudo grátis.
+
+1. Acesse https://console.cloud.google.com e crie um projeto (exemplo: `Conversor Liga`).
+2. No menu **APIs e serviços → Biblioteca**, ative a **Google Picker API** e a **Google Drive API**.
+3. No menu **Google Auth Platform** (ou **Tela de permissão OAuth**):
+   - Tipo de usuário: **Externo**. Preencha o nome do app e o seu e-mail.
+   - Em **Público**, clique em **Publicar app**. O site só pede o escopo `drive.file` (acesso apenas aos arquivos que a pessoa escolher), que não exige verificação do Google.
+4. Em **APIs e serviços → Credenciais → Criar credenciais → ID do cliente OAuth**:
+   - Tipo: **Aplicativo da Web**.
+   - Em **Origens JavaScript autorizadas**, adicione `https://hideonchimes.github.io` e `http://localhost:8000`.
+   - Copie o **ID do cliente**.
+5. Em **Criar credenciais → Chave de API**:
+   - Clique na chave criada. Em **Restrições de aplicativos**, escolha **Referenciadores HTTP** e adicione `https://hideonchimes.github.io/*` e `http://localhost:8000/*`.
+   - Em **Restrições de API**, escolha **Google Picker API**.
+   - Copie a chave.
+6. Na página inicial do projeto, copie o **Número do projeto**.
+7. Preencha `docs/config.js` com os três valores (`apiKey`, `clientId`, `appId`) e faça o push.
+
+Esses valores ficam visíveis no navegador de qualquer forma. A proteção vem das restrições dos passos 4 e 5, que só deixam o seu site usá-los.
+
 ## Rodar localmente
 
 ```bash
@@ -56,6 +80,12 @@ Para testar os formatos dos outros apps (gerados a partir de um CSV do ManaBox):
 
 ```bash
 node scripts/test_formats.mjs ../Coleções/Hobbit.csv
+```
+
+Para testar a ida e volta (CSV da Liga → ManaBox, comparando com o original):
+
+```bash
+node scripts/test_reverse.mjs ../Coleções
 ```
 
 Para importar o cache do `conv.py` sem acessar a Liga:

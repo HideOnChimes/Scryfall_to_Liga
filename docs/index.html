@@ -3,28 +3,44 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Conversor de Coleção → LigaMagic</title>
-  <meta name="description" content="Converta sua coleção do ManaBox, Scryfall, Moxfield, Deckbox, Dragon Shield ou TCGplayer (CSV), ou uma lista de cartas, para o CSV de importação da LigaMagic. Grátis, direto no navegador.">
+  <title>Conversor de Coleção MTG</title>
+  <meta name="description" content="Converta sua coleção de Magic entre LigaMagic, ManaBox, Moxfield, Scryfall, Deckbox, Dragon Shield e TCGplayer. Grátis.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="wrap">
-    <h1><img src="icon.svg" alt="" class="logo">Conversor de coleção <span>→ LigaMagic</span></h1>
-    <p class="lead">Transforme o CSV do ManaBox, Scryfall, Moxfield, Deckbox, Dragon Shield ou TCGplayer (ou uma lista de cartas) no CSV de importação da coleção da LigaMagic.</p>
+  <header class="wrap hero">
+    <h1><img src="icon.svg" alt="" class="logo">Conversor de coleção de Magic</h1>
+    <p class="lead">Converta sua coleção entre LigaMagic, ManaBox, Moxfield, Scryfall e outros apps</p>
   </header>
 
   <main class="wrap">
-    <section class="card" id="input">
-      <label class="drop" id="drop">
-        <input type="file" id="file" accept=".csv,.txt,text/csv,text/plain" hidden>
-        <strong>Arraste o arquivo aqui</strong>
-        <span>ou clique para escolher (.csv de um app de coleção ou .txt com lista)</span>
-        <span class="fname" id="fname"></span>
-      </label>
+    <section class="panel" id="drop">
+      <div class="panel-row">
+        <div class="pick">
+          <div class="pick-btns">
+            <label class="pick-main" for="file">Selecionar arquivo</label>
+            <label class="pick-icon" for="file" title="Do computador">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>
+              <span class="sr">Do computador</span>
+            </label>
+            <button type="button" class="pick-icon" id="drive" title="Do Google Drive">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 3h6.8l6.4 11.1-3.4 5.9H5.6l-3.4-5.9zm.9 1.6L4 14.1 6.6 18.5l5.5-9.5zm4.9 0H9.8l5.5 9.5h5.1zm-1.5 5.9L9.4 16.9h11.1l-2.5-4.3z"/></svg>
+              <span class="sr">Do Google Drive</span>
+            </button>
+          </div>
+          <input type="file" id="file" accept=".csv,.txt,text/csv,text/plain" hidden>
+          <p class="hint" id="fname">ou solte o arquivo aqui (.csv ou .txt)</p>
+        </div>
+        <div class="formats">
+          <select id="from" aria-label="Formato de origem"></select>
+          <span class="para">para</span>
+          <select id="to" aria-label="Formato de destino"></select>
+        </div>
+      </div>
       <details>
         <summary>…ou cole uma lista de cartas</summary>
-        <textarea id="paste" rows="8" placeholder="1 Bolg's Company [SCHOB]&#10;1 Gleaming Splendor (BCHOB) 239&#10;2 Lightning Bolt&#10;1 Sol Ring *F*"></textarea>
+        <textarea id="paste" rows="7" placeholder="1 Bolg's Company [SCHOB]&#10;1 Gleaming Splendor (BCHOB) 239&#10;2 Lightning Bolt&#10;1 Sol Ring *F*"></textarea>
       </details>
       <div class="actions">
         <button id="go" disabled>Converter</button>
@@ -41,7 +57,7 @@
           <h2 id="summary"></h2>
           <label class="toggle"><input type="checkbox" id="onlyWarn"> mostrar só as linhas para conferir</label>
         </div>
-        <button id="download">Baixar CSV da Liga</button>
+        <button id="download">Baixar</button>
       </div>
       <div class="table-wrap"><table id="table"></table></div>
     </section>
@@ -49,10 +65,11 @@
     <section class="card help">
       <h2>Como usar</h2>
       <ol>
-        <li>Exporte a coleção em CSV do seu app (ManaBox, Moxfield, Deckbox, Dragon Shield, TCGplayer…) ou de uma busca do Scryfall. Ou monte uma lista de texto, uma carta por linha.</li>
-        <li>Solte o arquivo aqui e clique em <strong>Converter</strong>.</li>
-        <li>Confira as linhas marcadas com <span class="tag">VERIFICAR</span> (coluna Comentário).</li>
-        <li>Na LigaMagic: <em>Minha Coleção → Importar</em> e envie o CSV baixado.</li>
+        <li>Exporte a coleção em CSV do seu app (LigaMagic, ManaBox, Moxfield, Deckbox, Dragon Shield, TCGplayer…) ou de uma busca do Scryfall. Ou monte uma lista de texto, uma carta por linha.</li>
+        <li>Selecione o arquivo (do computador ou do Google Drive). O formato de origem é detectado sozinho.</li>
+        <li>Escolha o formato de destino e clique em <strong>Converter</strong>.</li>
+        <li>Confira as linhas marcadas com <span class="tag">VERIFICAR</span> e baixe o arquivo.</li>
+        <li>Importe no app de destino. Na LigaMagic: <em>Minha Coleção → Importar</em>.</li>
       </ol>
       <h3>CSVs aceitos</h3>
       <p>O site reconhece as colunas automaticamente, inclusive em planilhas com cabeçalho em português e separadas por <code>;</code>.
@@ -62,6 +79,7 @@
         <li><strong>ManaBox</strong>: completo (quantidade, foil, condição, idioma).</li>
         <li><strong>Moxfield, Deckbox, Dragon Shield, TCGplayer</strong>: completo, busca por edição + número.</li>
         <li><strong>Scryfall</strong> (export de busca): sem quantidade, foil e condição; usa 1, normal e NM.</li>
+        <li><strong>LigaMagic</strong> (export da coleção): convertido de volta pela edição + número de cada carta.</li>
       </ul>
       <h3>Formatos de lista aceitos</h3>
       <pre>1 Nome da Carta (SIGLA) 123
