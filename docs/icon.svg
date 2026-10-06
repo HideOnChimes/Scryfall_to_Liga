@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#b4441f"/>
+  <!-- carta de origem (atras) -->
+  <rect x="5" y="5" width="13" height="18" rx="2.5" fill="#fff" fill-opacity=".45" transform="rotate(-10 11.5 14)"/>
+  <!-- carta convertida (frente) -->
+  <rect x="13" y="9" width="13" height="18" rx="2.5" fill="#fff"/>
+  <!-- seta -->
+  <path d="M16 18h6m-2.6-3 3 3-3 3" fill="none" stroke="#b4441f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
