@@ -139,11 +139,14 @@ def main():
     ap.add_argument("--delay", type=float, default=360, help="segundos entre requisicoes (robots.txt pede 360)")
     ap.add_argument("--seed", help="pasta .cache_liga do conv.py para importar sem acessar a Liga")
     ap.add_argument("--only", nargs="*", help="siglas especificas para baixar agora")
+    ap.add_argument("--minutes", type=float, default=0,
+                    help="para antes de passar desse tempo (0 = sem limite); evita estourar o timeout do Actions")
     a = ap.parse_args()
 
     state_path = os.path.join(DATA, "state.json")
     state = load(state_path, {})
     today = dt.date.today()
+    start = time.monotonic()
 
     if a.seed:
         eds = seed(a.seed, state)
@@ -162,6 +165,9 @@ def main():
     print(f"{len(eds)} edicoes; baixando {len(todo)}: {', '.join(e['acronym'] for e in todo)}")
 
     for e in todo:
+        if a.minutes and (time.monotonic() - start + a.delay + 60) / 60 > a.minutes:
+            print("tempo esgotado, o resto fica para a proxima execucao")
+            break
         time.sleep(a.delay)
         try:
             cards = fetch_cards(e)

@@ -15,7 +15,7 @@ Site estático que converte o CSV de coleção do ManaBox, Scryfall, Moxfield, D
 
 ### Ritmo do scraping
 
-O `robots.txt` da LigaMagic pede `Crawl-delay: 360`. Por isso o script espera 6 minutos entre requisições e baixa no máximo 12 edições por execução.
+O `robots.txt` da LigaMagic pede `Crawl-delay: 360`. Por isso o script espera 6 minutos entre requisições. O workflow roda 4 vezes por dia, com até 55 edições por execução (cerca de 5h30, abaixo do limite de 6h do Actions). São no máximo 240 edições por dia, então o catálogo inteiro leva uns 5 a 6 dias para ser indexado.
 
 A fila de cada execução segue esta ordem:
 1. Edições recentes (lançadas nos últimos 90 dias) cujos dados têm mais de 3 dias.
