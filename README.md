@@ -12,19 +12,39 @@ Site estático que converte coleções de Magic entre formatos: de ManaBox, Scry
   - `config.js` guarda as credenciais do Google Drive.
   - `data/edicoes.json` lista as edições da Liga. O campo `s` indica a data em que as cartas daquela edição foram baixadas.
   - `data/cards/<id>.json` guarda as cartas de cada edição.
-- `scripts/build_data.py` raspa a LigaMagic e gera `docs/data`. O GitHub Actions roda esse script uma vez por dia.
+- `scripts/build_data.py` raspa a LigaMagic e gera `docs/data`. Ele roda no seu PC, via `scripts/atualizar_liga.ps1`, que também commita e publica os dados (veja [Atualizar os dados da Liga](#atualizar-os-dados-da-liga)).
 - O Scryfall é consultado direto do navegador, pelo endpoint `/cards/collection`, com até 75 cartas por requisição.
 - As colunas do CSV são reconhecidas pelo nome (veja `COLS` em `conv.js`). A carta é procurada pelo melhor dado disponível, nesta ordem: Scryfall ID, edição + número, nome + edição e, por último, só o nome. Siglas da Liga que o Scryfall não conhece (ex.: `schob`) são procuradas direto nos dados da Liga.
 
 ### Ritmo do scraping
 
-O `robots.txt` da LigaMagic pede `Crawl-delay: 360`. Por isso o script espera 6 minutos entre requisições. O workflow roda 4 vezes por dia, com até 55 edições por execução (cerca de 5h30, abaixo do limite de 6h do Actions). São no máximo 240 edições por dia, então o catálogo inteiro leva uns 5 a 6 dias para ser indexado.
+O `robots.txt` da LigaMagic pede `Crawl-delay: 360`. Por isso o script espera 6 minutos entre requisições. A tarefa agendada roda 4 vezes por dia, com até 55 edições por execução (cerca de 5h30). São no máximo 240 edições por dia, então o catálogo inteiro leva uns 5 a 6 dias para ser indexado.
 
 A fila de cada execução segue esta ordem:
 1. Edições recentes (lançadas nos últimos 90 dias) cujos dados têm mais de 3 dias.
 2. Edições que nunca foram indexadas, das mais novas para as mais antigas.
 
 Quando uma carta cai numa edição ainda não indexada, o site marca a linha com `VERIFICAR`.
+
+## Atualizar os dados da Liga
+
+A LigaMagic fica atrás do Cloudflare e responde `HTTP 403` para os IPs do GitHub Actions. Por isso o scraping roda num PC comum e o Actions só publica o site.
+
+`scripts/atualizar_liga.ps1` faz tudo: `git pull`, roda o `build_data.py`, commita `docs/data` e dá `git push` (o push dispara a publicação). Precisa de `git` com credencial salva para o repositório e `python` no PATH.
+
+Para agendar a cada 6 horas no Agendador de Tarefas do Windows (roda como o seu usuário, só com o PC ligado):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scriptstualizar_liga.ps1 -Instalar
+```
+
+Para rodar na hora, ou indexar edições específicas:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scriptstualizar_liga.ps1 -Only "hob tla"
+```
+
+O log fica em `scripts/atualizar_liga.log`.
 
 ## Publicar no GitHub Pages
 
@@ -39,7 +59,7 @@ Quando uma carta cai numa edição ainda não indexada, o site marca a linha com
    ```
 3. No repositório, vá em **Settings → Pages → Source** e escolha **GitHub Actions**.
 4. O push dispara a publicação. O site fica em `https://SEU_USUARIO.github.io/conversor-liga/`.
-5. Para indexar uma edição na hora: **Actions → Atualizar dados e publicar → Run workflow**, preenchendo o campo `only` (exemplo: `hob tla`).
+5. Para indexar uma edição na hora, rode `scriptstualizar_liga.ps1 -Only "hob tla"` no seu PC (veja acima). O **Run workflow** do Actions também tenta, mas a Liga bloqueia o runner do GitHub.
 
 ## Google Drive
 

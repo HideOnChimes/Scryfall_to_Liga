@@ -8,8 +8,11 @@ Gera os dados estaticos que o site usa (docs/data):
 O robots.txt da LigaMagic pede Crawl-delay de 360s, entao cada execucao baixa poucas
 edicoes (prioridade: lancamentos recentes e edicoes ainda nao indexadas).
 
+A LigaMagic (Cloudflare) responde 403 para os IPs do GitHub Actions, por isso o scraping
+roda num PC comum via scripts/atualizar_liga.ps1, que faz o commit e o push de docs/data.
+
 Uso:
-    python scripts/build_data.py                         # execucao normal (GitHub Actions, 1x/dia)
+    python scripts/build_data.py                         # execucao normal (via scripts/atualizar_liga.ps1)
     python scripts/build_data.py --max 5 --delay 360
     python scripts/build_data.py --seed ../.cache_liga   # importa o cache do conv.py, sem acessar a Liga
     python scripts/build_data.py --only hob tla          # forca edicoes especificas
@@ -22,6 +25,7 @@ import os
 import re
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -40,10 +44,14 @@ def get(url, retries=3):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=HDR), timeout=60) as r:
                 return r.read().decode("utf-8", "ignore")
-        except Exception:  # noqa
-            if i == retries - 1:
-                raise
-            time.sleep(30 * (i + 1))
+        except Exception as ex:  # noqa
+            if i < retries - 1:
+                time.sleep(30 * (i + 1))
+                continue
+            if isinstance(ex, urllib.error.HTTPError) and ex.code == 403:
+                sys.exit(f"HTTP 403 em {url}: a LigaMagic (Cloudflare) bloqueou este IP. "
+                         "Runners do GitHub Actions sao barrados; rode scripts/atualizar_liga.ps1 num PC comum.")
+            raise
 
 
 def load(path, default):

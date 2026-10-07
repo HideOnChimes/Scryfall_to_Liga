@@ -1,10 +1,11 @@
 name: Atualizar dados e publicar
 
+# Os dados da Liga sao atualizados fora daqui: a LigaMagic (Cloudflare) responde 403 para os
+# runners do GitHub, entao scripts/atualizar_liga.ps1 roda num PC comum e faz push de docs/data.
+# O push publica o site. A execucao manual (workflow_dispatch) ainda tenta o scraping no runner.
 on:
   push:
     branches: [main]
-  schedule:
-    - cron: "17 */6 * * *" # 4x por dia; com o crawl-delay de 6 min da Liga, ~55 edicoes por execucao
   workflow_dispatch:
     inputs:
       max:
@@ -21,8 +22,8 @@ permissions:
 
 jobs:
   data:
-    # push so publica; agendamento e execucao manual atualizam os dados da Liga
-    if: github.event_name != 'push'
+    # push so publica; a execucao manual tenta atualizar os dados da Liga (hoje a Liga barra o runner com 403)
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 350
     # uma execucao de scraping por vez, para respeitar o crawl-delay
