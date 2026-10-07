@@ -300,7 +300,7 @@ function show(it) {
       td.contentEditable = "plaintext-only";
       td.spellcheck = false;
       if (isNoteCol(result, ci)) td.className = "comment";
-      if (it.edited?.has(`${ri}:${ci}`)) td.classList.add("edited");
+      if (isEdited(result, ri, ci)) td.classList.add("edited");
     }
     const del = Object.assign(document.createElement("button"), { type: "button", className: "row-del",
       textContent: "✕", title: "Apagar linha" });
@@ -308,6 +308,20 @@ function show(it) {
   });
   $("result").hidden = false;
   refreshResults();
+}
+
+// valor original de cada linha, guardado pela propria linha (nao pelo indice, que muda ao apagar linhas);
+// linha adicionada a mao comeca vazia. Celula so fica marcada enquanto difere do original.
+function original(result, ri) {
+  result.orig ||= new WeakMap();
+  const row = result.rows[ri];
+  if (!result.orig.has(row)) result.orig.set(row, { cells: [...row], note: result.notes[ri] || "" });
+  return result.orig.get(row);
+}
+
+function isEdited(result, ri, ci) {
+  const o = original(result, ri);
+  return ci === "note" ? (result.notes[ri] || "") !== o.note : (result.rows[ri][ci] ?? "") !== (o.cells[ci] ?? "");
 }
 
 // edicao direto na tabela: cada tecla atualiza a linha que vai para o arquivo baixado
@@ -323,11 +337,11 @@ $("table").addEventListener("input", (e) => {
   const c = cellOf(e);
   if (!c) return;
   const { rows, notes } = shown.result;
+  original(shown.result, c.ri);
   const v = c.td.textContent;
   if (c.ci !== "note") rows[c.ri][c.ci] = v;
   if (isNoteCol(shown.result, c.ci)) notes[c.ri] = v.trim();
-  (shown.edited ||= new Set()).add(`${c.ri}:${c.ci}`);
-  c.td.classList.add("edited");
+  c.td.classList.toggle("edited", isEdited(shown.result, c.ri, c.ci));
   c.td.parentElement.classList.toggle("warn", !!notes[c.ri]);
   summarize();
 });
@@ -350,7 +364,6 @@ $("table").addEventListener("click", (e) => {
   const ri = +e.target.closest("tr").dataset.ri;
   shown.result.rows.splice(ri, 1);
   shown.result.notes.splice(ri, 1);
-  shown.edited = null; // indices mudaram
   show(shown);
   renderFiles();
 });
