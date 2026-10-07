@@ -113,7 +113,7 @@ footer { color: var(--muted); font-size: .82rem; padding-bottom: 40px; }
 /* botao e seletores com a mesma altura e alinhados pelo topo; a dica fica embaixo do botao */
 .panel-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px 28px; flex-wrap: wrap; }
 .pick-btns, .formats select { height: 56px; }
-.pick-btns { display: flex; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+.pick-btns { display: flex; width: fit-content; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
 .pick-main, .pick-icon {
   background: var(--accent); color: #fff; cursor: pointer; border: 0; border-radius: 0;
   display: flex; align-items: center; font: inherit; font-weight: 700;
