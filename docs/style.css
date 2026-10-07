@@ -37,7 +37,6 @@ header { padding-top: 40px; }
 .hero { text-align: center; }
 .hero .lead { margin: 0 auto 28px; }
 h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); margin: 0 0 8px; letter-spacing: -0.02em; }
-h1 span { color: var(--accent); }
 h1 .home { text-decoration: none; }
 h1 .logo { width: 1.1em; height: 1.1em; vertical-align: -0.18em; margin-right: 0.35em; }
 .lead { color: var(--muted); max-width: 640px; margin: 0 0 24px; }
@@ -186,3 +185,11 @@ button.secondary { background: transparent; color: var(--accent); border: 1px so
   .pick-btns, .formats select { height: 50px; }
   .formats select { min-width: 0; font-size: 1.05rem; padding: 0 36px 0 14px; }
 }
+
+/* seletor de idioma do site */
+.topbar { display: flex; justify-content: flex-end; padding-top: 14px; }
+.topbar select {
+  background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 10px; font: inherit; font-size: .9rem; cursor: pointer;
+}
+.topbar + header { padding-top: 8px; }

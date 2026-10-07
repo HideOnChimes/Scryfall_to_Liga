@@ -2,6 +2,7 @@ import { Liga, scryfallClient } from "./conv.js";
 import { SOURCES, TARGETS, ENUMS, label, detectFormat, convert, serialize } from "./formats.js";
 import { makeZip } from "./zip.js";
 import { GOOGLE } from "./config.js";
+import { t, LANGS, getLang, setLang, applyStatic } from "./i18n.js";
 
 const $ = (id) => document.getElementById(id);
 const loadJSON = async (p) => {
@@ -14,7 +15,17 @@ const loadJSON = async (p) => {
 let liga, items = [], running = false, shown = null;
 const scryfall = scryfallClient(); // um cliente so: a lista de sets do Scryfall e baixada uma vez
 
-function setStatus(msg) { $("status").textContent = msg; }
+// status guardado como funcao para ser redesenhado quando o idioma muda
+let statusFn = () => t("status.loading");
+function setStatus(key, ...args) {
+  statusFn = typeof key === "function" ? key : () => t(key, ...args);
+  $("status").textContent = statusFn();
+}
+
+// nomes de formato: marcas ficam iguais; "Outro CSV" e "Lista de texto" sao traduzidos
+const fmtLabel = (k) => (k === "csv" || k === "lista" ? t(`fmt.${k}`) : label(SOURCES, k));
+const errText = (e) => (e?.code === "sameFormat" ? t("err.sameFormat", fmtLabel(e.target))
+  : e?.code ? t(`err.${e.code}`) : e?.message || String(e));
 function setProgress(frac) {
   $("progress").hidden = frac == null;
   $("bar").style.width = `${Math.round((frac || 0) * 100)}%`;
@@ -23,7 +34,7 @@ function setProgress(frac) {
 // lista colada conta como mais um arquivo do lote
 function jobs() {
   const paste = $("paste").value;
-  const pasted = paste.trim() ? [{ name: "lista", text: paste, detected: detectFormat(paste), pasted: true }] : [];
+  const pasted = paste.trim() ? [{ name: t("file.pasted"), text: paste, detected: detectFormat(paste), pasted: true }] : [];
   return [...items, ...pasted];
 }
 function refreshButton() {
@@ -32,7 +43,10 @@ function refreshButton() {
 
 // ---------------------------------------------------------------- formatos
 function fill(sel, list) {
-  for (const [k, v] of list) sel.add(new Option(v, k));
+  for (const [k] of list) sel.add(new Option(fmtLabel(k), k));
+}
+function relabel() {
+  for (const sel of [$("from"), $("to")]) for (const o of sel.options) if (o.value !== "auto") o.text = fmtLabel(o.value);
 }
 fill($("from"), SOURCES);
 fill($("to"), TARGETS);
@@ -43,8 +57,8 @@ const fromOf = (job) => ($("from").value === "auto" ? job.detected : $("from").v
 function syncFormats() {
   const list = jobs();
   const found = [...new Set(list.map((j) => j.detected))];
-  $("from").options[0].text = found.length === 1 ? `${label(SOURCES, found[0])} (detectado)`
-    : found.length > 1 ? "Detectar (vários)" : "Detectar";
+  $("from").options[0].text = found.length === 1 ? t("fmt.detected", fmtLabel(found[0]))
+    : found.length > 1 ? t("fmt.autoMany") : t("fmt.auto");
   const froms = new Set(list.map(fromOf));
   for (const o of $("to").options) o.disabled = froms.size === 1 && froms.has(o.value) && o.value !== "lista";
   if ($("to").selectedOptions[0]?.disabled) $("to").value = froms.has("liga") ? "manabox" : "liga";
@@ -53,7 +67,7 @@ function syncFormats() {
 $("from").addEventListener("change", syncFormats);
 
 // ---------------------------------------------------------------- lista de arquivos
-const STATUS = { fila: "Na fila", rodando: "Convertendo…", ok: "Pronto", warn: "Pronto", err: "Erro" };
+const STATUS = { fila: "file.queued", rodando: "file.running", ok: "file.ok" };
 
 function renderFiles() {
   const ul = $("files");
@@ -62,20 +76,20 @@ function renderFiles() {
   for (const it of items) {
     const li = document.createElement("li");
     const name = Object.assign(document.createElement("span"), { className: "fname", textContent: it.fullName });
-    const fmt = Object.assign(document.createElement("span"), { className: "fmt", textContent: label(SOURCES, fromOf(it)) });
+    const fmt = Object.assign(document.createElement("span"), { className: "fmt", textContent: fmtLabel(fromOf(it)) });
     const st = Object.assign(document.createElement("span"), { className: `st ${it.status || ""}` });
-    st.textContent = it.status === "warn" ? `Pronto · ${it.result.notes.filter(Boolean).length} para conferir`
-      : it.status === "err" ? `Erro: ${it.error}` : STATUS[it.status] || "";
+    st.textContent = it.status === "warn" ? t("file.warn", it.result.notes.filter(Boolean).length)
+      : it.status === "err" ? t("file.err", errText(it.error)) : STATUS[it.status] ? t(STATUS[it.status]) : "";
     li.append(name, fmt, st);
     if (it.result) {
-      const view = Object.assign(document.createElement("button"), { type: "button", textContent: "Ver" });
+      const view = Object.assign(document.createElement("button"), { type: "button", textContent: t("file.view") });
       view.addEventListener("click", () => show(it));
-      const dl = Object.assign(document.createElement("button"), { type: "button", textContent: "Baixar" });
+      const dl = Object.assign(document.createElement("button"), { type: "button", textContent: t("file.download") });
       dl.addEventListener("click", () => download(it));
       li.append(view, dl);
     }
     const rm = Object.assign(document.createElement("button"), { type: "button", className: "rm", textContent: "✕",
-      title: "Remover", disabled: running });
+      title: t("file.remove"), disabled: running });
     rm.addEventListener("click", () => {
       items = items.filter((x) => x !== it);
       if (shown === it) { shown = null; $("result").hidden = true; }
@@ -96,7 +110,7 @@ function addFile(text, fullName) {
 
 async function addFiles(files) {
   for (const f of files) addFile(await f.text(), f.name);
-  setStatus(`${items.length} ${items.length === 1 ? "arquivo" : "arquivos"} na lista.`);
+  setStatus("status.inList", items.length);
 }
 
 $("file").addEventListener("change", async (e) => {
@@ -148,7 +162,7 @@ async function downloadFromDrive(doc) {
 
 $("drive").addEventListener("click", async () => {
   if (!driveReady) {
-    setStatus("O Google Drive ainda não foi configurado neste site.");
+    setStatus("drive.notConfigured");
     return;
   }
   try {
@@ -163,22 +177,22 @@ $("drive").addEventListener("click", async () => {
       .setOAuthToken(token)
       .setDeveloperKey(GOOGLE.apiKey)
       .setAppId(GOOGLE.appId)
-      .setLocale("pt-BR")
+      .setLocale(getLang() === "pt" ? "pt-BR" : getLang())
       .setCallback(async (data) => {
         if (data.action !== google.picker.Action.PICKED) return;
-        setStatus("Baixando do Google Drive…");
+        setStatus("drive.downloading");
         try {
           for (const doc of data.docs) await downloadFromDrive(doc);
-          setStatus(`${data.docs.length} ${data.docs.length === 1 ? "arquivo carregado" : "arquivos carregados"} do Google Drive.`);
+          setStatus("drive.loaded", data.docs.length);
         } catch (e) {
-          setStatus(`Erro: ${e.message}`);
+          setStatus("status.error", errText(e));
         }
       })
       .build()
       .setVisible(true);
   } catch (e) {
     console.error(e);
-    setStatus(`Não consegui abrir o Google Drive: ${e.message}`);
+    setStatus("drive.openError", errText(e));
   }
 });
 
@@ -187,7 +201,7 @@ $("go").addEventListener("click", async () => {
   const list = jobs();
   const pasted = list.find((j) => j.pasted);
   if (pasted) { // a lista colada passa a ser um item do lote
-    items.push({ ...pasted, fullName: "lista colada", pasted: false });
+    items.push({ ...pasted, fullName: t("file.pasted"), pasted: false });
     $("paste").value = "";
   }
   const to = $("to").value;
@@ -202,16 +216,16 @@ $("go").addEventListener("click", async () => {
   const n = items.length;
   for (let k = 0; k < n; k++) {
     const it = items[k];
-    const prefix = n > 1 ? `Arquivo ${k + 1}/${n} · ` : "";
+    const prefix = () => (n > 1 ? t("status.fileOf", k + 1, n) : "");
     it.status = "rodando";
     renderFiles();
     const onProgress = (stage, done, total, name) => {
       let frac;
       if (stage === "scryfall") {
-        setStatus(`${prefix}Consultando Scryfall… ${done}/${total}`);
+        setStatus(() => prefix() + t("status.scryfall", done, total));
         frac = (to === "liga" ? 0.3 : 0.95) * done / total;
       } else {
-        setStatus(`${prefix}Procurando na Liga… ${done}/${total}${name ? ` — ${name}` : ""}`);
+        setStatus(() => prefix() + t("status.liga", done, total, name));
         frac = 0.3 + 0.7 * done / total;
       }
       setProgress((k + frac) / n);
@@ -223,7 +237,7 @@ $("go").addEventListener("click", async () => {
     } catch (e) {
       console.error(e);
       it.status = "err";
-      it.error = e.message;
+      it.error = e;
     }
     renderFiles();
     refreshResults();
@@ -232,7 +246,10 @@ $("go").addEventListener("click", async () => {
   running = false;
   setProgress(null);
   const done = items.filter((it) => it.result).length;
-  setStatus(n > 1 ? `Pronto: ${done} de ${n} arquivos convertidos.` : done ? "Pronto." : `Erro: ${items[0].error}`);
+  const firstErr = items[0]?.error;
+  if (n > 1) setStatus("status.doneMany", done, n);
+  else if (done) setStatus("status.done");
+  else setStatus(() => t("status.error", errText(firstErr)));
   renderFiles();
   refreshButton();
 });
@@ -240,13 +257,13 @@ $("go").addEventListener("click", async () => {
 // ---------------------------------------------------------------- resultado
 // para a Liga mostra so as colunas uteis, com nomes curtos
 const LIGA_SHOW = [2, 4, 3, 5, 6, 7, 8, 9, 10, 11, 12];
-const LIGA_LABEL = { 2: "Sigla", 4: "Carta (EN)", 3: "Carta (PT)", 5: "Qtd", 6: "Qual.", 7: "Idioma", 8: "Rar.",
-  9: "Cor", 10: "Extras", 11: "#", 12: "Aviso" };
+const LIGA_LABEL = { 2: "col.code", 4: "col.cardEn", 3: "col.cardPt", 5: "col.qty", 6: "col.cond", 7: "col.lang",
+  8: "col.rarity", 9: "col.color", 10: "col.extras", 11: "#", 12: "col.note" };
 
 // [titulo, indice da coluna na linha | "note"]; o aviso so vai para o arquivo na saida da Liga (coluna 12)
 function columns(result) {
-  if (result.to === "liga") return LIGA_SHOW.map((i) => [LIGA_LABEL[i], i]);
-  return [...result.header.map((h, i) => [h, i]), ["Aviso", "note"]];
+  if (result.to === "liga") return LIGA_SHOW.map((i) => [t(LIGA_LABEL[i]), i]);
+  return [...result.header.map((h, i) => [h, i]), [t("col.note"), "note"]];
 }
 const isNoteCol = (result, ci) => ci === "note" || (result.noteInFile && ci === 12);
 
@@ -266,8 +283,7 @@ function summarize() {
   const { rows, notes } = result;
   const warn = notes.filter(Boolean).length;
   const qty = result.to === "liga" ? rows.reduce((s, r) => s + (parseInt(r[5], 10) || 0), 0) : null;
-  $("summary").textContent = `${label(SOURCES, result.from)} → ${label(TARGETS, result.to)}: ${rows.length} linhas` +
-    (qty != null ? ` (${qty} cartas)` : "") + (warn ? ` · ${warn} para conferir` : " · tudo certo");
+  $("summary").textContent = t("result.summary", fmtLabel(result.from), fmtLabel(result.to), rows.length, qty, warn);
   shown.status = warn ? "warn" : "ok";
 }
 
@@ -276,7 +292,7 @@ function show(it) {
   const result = it.result;
   const { rows, notes } = result;
   summarize();
-  $("download").textContent = `Baixar ${result.ext.toUpperCase()} ${label(TARGETS, result.to)}`;
+  $("download").textContent = t("result.download", result.ext.toUpperCase(), fmtLabel(result.to));
   const only = $("onlyWarn").checked;
   const cols = columns(result);
   const table = $("table");
@@ -313,7 +329,7 @@ function show(it) {
       if (isEdited(result, ri, ci)) td.classList.add("edited");
     }
     const del = Object.assign(document.createElement("button"), { type: "button", className: "row-del",
-      textContent: "✕", title: "Apagar linha" });
+      textContent: "✕", title: t("result.deleteRow") });
     tr.insertCell().append(del);
   });
   $("result").hidden = false;
@@ -401,7 +417,7 @@ $("addRow").addEventListener("click", () => {
 
 $("onlyWarn").addEventListener("change", () => shown && show(shown));
 
-const outName = (it) => `${it.name} - ${label(TARGETS, it.result.to)}.${it.result.ext}`;
+const outName = (it) => `${it.name} - ${fmtLabel(it.result.to)}.${it.result.ext}`;
 
 function save(blob, name) {
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: name });
@@ -424,18 +440,39 @@ $("zip").addEventListener("click", () => {
     if (k > 1) name = name.replace(/(\.[^.]+)$/, ` (${k})$1`);
     return { name, text: serialize(it.result) };
   });
-  save(makeZip(files), `colecoes - ${label(TARGETS, $("to").value)}.zip`);
+  save(makeZip(files), `colecoes - ${fmtLabel($("to").value)}.zip`);
 });
+
+// ---------------------------------------------------------------- idioma
+function renderDataInfo() {
+  if (!liga) return;
+  const indexed = liga.eds.filter((e) => e.s);
+  const last = indexed.map((e) => e.s).sort().pop();
+  const date = last && (getLang() === "en" ? last : last.split("-").reverse().join("/"));
+  $("dataInfo").textContent = t("data.info", indexed.length, liga.eds.length, date);
+}
+
+// redesenha tudo que tem texto; edicoes da tabela ficam nos dados, entao nada se perde
+function renderLang() {
+  applyStatic();
+  relabel();
+  syncFormats();
+  $("status").textContent = statusFn();
+  renderDataInfo();
+  if (shown) show(shown);
+}
+
+for (const [k, v] of LANGS) $("lang").add(new Option(v, k));
+$("lang").value = getLang();
+$("lang").addEventListener("change", () => { setLang($("lang").value); renderLang(); });
+renderLang();
 
 // ---------------------------------------------------------------- boot
 try {
   liga = await Liga.load(loadJSON);
-  const indexed = liga.eds.filter((e) => e.s);
-  const last = indexed.map((e) => e.s).sort().pop();
-  $("dataInfo").textContent = `${indexed.length} de ${liga.eds.length} edições da Liga indexadas` +
-    (last ? ` · última atualização ${last.split("-").reverse().join("/")}` : "") + ".";
-  setStatus("Escolha arquivos ou cole uma lista.");
+  renderDataInfo();
+  setStatus("status.ready");
 } catch (e) {
-  setStatus(`Não consegui carregar as edições: ${e.message}`);
+  setStatus("status.loadError", errText(e));
 }
 refreshButton();

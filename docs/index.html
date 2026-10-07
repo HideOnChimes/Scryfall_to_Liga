@@ -9,9 +9,12 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="wrap topbar">
+    <select id="lang" aria-label="Idioma / Language"></select>
+  </div>
   <header class="wrap hero">
-    <h1><img src="icon.svg" alt="" class="logo">Conversor de coleção de Magic</h1>
-    <p class="lead">Converta sua coleção entre LigaMagic, ManaBox, Moxfield, Scryfall e outros apps</p>
+    <h1><img src="icon.svg" alt="" class="logo"><span data-i18n="hero.title">Conversor de coleção de Magic</span></h1>
+    <p class="lead" data-i18n="hero.lead">Converta sua coleção entre LigaMagic, ManaBox, Moxfield, Scryfall e outros apps</p>
   </header>
 
   <main class="wrap">
@@ -19,32 +22,32 @@
       <div class="panel-row">
         <div class="pick">
           <div class="pick-btns">
-            <label class="pick-main" for="file">Selecionar arquivos</label>
-            <label class="pick-icon" for="file" title="Do computador">
+            <label class="pick-main" for="file" data-i18n="pick.main">Selecionar arquivos</label>
+            <label class="pick-icon" for="file" data-i18n-title="pick.pc" title="Do computador">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>
-              <span class="sr">Do computador</span>
+              <span class="sr" data-i18n="pick.pc">Do computador</span>
             </label>
-            <button type="button" class="pick-icon" id="drive" title="Do Google Drive">
+            <button type="button" class="pick-icon" id="drive" data-i18n-title="pick.drive" title="Do Google Drive">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.71 3.5 1.15 15l3.43 6 6.55-11.5zM9.73 15l-3.43 6h13.12l3.43-6zm12.55-1L15.42 2H8.58l6.85 12z"/></svg>
-              <span class="sr">Do Google Drive</span>
+              <span class="sr" data-i18n="pick.drive">Do Google Drive</span>
             </button>
           </div>
           <input type="file" id="file" accept=".csv,.txt,text/csv,text/plain" multiple hidden>
-          <p class="hint">ou solte os arquivos aqui (.csv ou .txt)</p>
+          <p class="hint" data-i18n="pick.hint">ou solte os arquivos aqui (.csv ou .txt)</p>
         </div>
         <div class="formats">
-          <select id="from" aria-label="Formato de origem"></select>
-          <span class="para">para</span>
-          <select id="to" aria-label="Formato de destino"></select>
+          <select id="from" data-i18n-aria="fmt.fromAria" aria-label="Formato de origem"></select>
+          <span class="para" data-i18n="fmt.to">para</span>
+          <select id="to" data-i18n-aria="fmt.toAria" aria-label="Formato de destino"></select>
         </div>
       </div>
       <ul class="files" id="files" hidden></ul>
       <details>
-        <summary>…ou cole uma lista de cartas</summary>
+        <summary data-i18n="paste.summary">…ou cole uma lista de cartas</summary>
         <textarea id="paste" rows="7" placeholder="1 Bolg's Company [SCHOB]&#10;1 Gleaming Splendor (BCHOB) 239&#10;2 Lightning Bolt&#10;1 Sol Ring *F*"></textarea>
       </details>
       <div class="actions">
-        <button id="go" disabled>Converter</button>
+        <button id="go" disabled data-i18n="go">Converter</button>
         <span class="status" id="status">Carregando edições…</span>
       </div>
       <div class="progress" id="progress" hidden><div id="bar"></div></div>
@@ -56,56 +59,36 @@
       <div class="result-head">
         <div>
           <h2 id="summary"></h2>
-          <label class="toggle"><input type="checkbox" id="onlyWarn"> mostrar só as linhas para conferir</label>
+          <label class="toggle"><input type="checkbox" id="onlyWarn"> <span data-i18n="result.onlyWarn">mostrar só as linhas para conferir</span></label>
         </div>
         <div class="result-btns">
-          <select id="which" aria-label="Arquivo exibido" hidden></select>
+          <select id="which" data-i18n-aria="result.whichAria" aria-label="Arquivo exibido" hidden></select>
           <button id="download">Baixar</button>
-          <button id="zip" class="secondary" hidden>Baixar todos (.zip)</button>
+          <button id="zip" class="secondary" hidden data-i18n="result.zip">Baixar todos (.zip)</button>
         </div>
       </div>
-      <p class="edit-hint">Clique numa célula para editar. As alterações vão para o arquivo baixado.
+      <p class="edit-hint" data-i18n="result.editHint">Clique numa célula para editar. As alterações vão para o arquivo baixado.
         Apague o texto do aviso para marcar a linha como conferida. Converter de novo desfaz as edições.</p>
       <div class="table-wrap"><table id="table"></table></div>
-      <button type="button" id="addRow" class="secondary add-row">+ Adicionar linha</button>
+      <button type="button" id="addRow" class="secondary add-row" data-i18n="result.addRow">+ Adicionar linha</button>
     </section>
 
     <section class="card help">
-      <h2>Como usar</h2>
-      <ol>
-        <li>Exporte a coleção em CSV do seu app (LigaMagic, ManaBox, Moxfield, Deckbox, Dragon Shield, TCGplayer…) ou de uma busca do Scryfall. Ou monte uma lista de texto, uma carta por linha.</li>
-        <li>Selecione um ou vários arquivos (do computador ou do Google Drive). O formato de origem de cada um é detectado sozinho.</li>
-        <li>Escolha o formato de destino e clique em <strong>Converter</strong>.</li>
-        <li>Confira as linhas marcadas com <span class="tag">VERIFICAR</span> e baixe os arquivos, um a um ou todos num .zip.</li>
-        <li>Importe no app de destino. Na LigaMagic: <em>Minha Coleção → Importar</em>.</li>
-      </ol>
-      <h3>CSVs aceitos</h3>
-      <p>O site reconhece as colunas automaticamente, inclusive em planilhas com cabeçalho em português e separadas por <code>;</code>.
-        O melhor resultado vem de CSVs com <strong>Scryfall ID</strong> (ManaBox, Scryfall); nos demais a carta é encontrada por
-        edição + número, ou pelo nome.</p>
-      <ul>
-        <li><strong>ManaBox</strong>: completo (quantidade, foil, condição, idioma).</li>
-        <li><strong>Moxfield, Deckbox, Dragon Shield, TCGplayer</strong>: completo, busca por edição + número.</li>
-        <li><strong>Scryfall</strong> (export de busca): sem quantidade, foil e condição; usa 1, normal e NM.</li>
-        <li><strong>LigaMagic</strong> (export da coleção): convertido de volta pela edição + número de cada carta.</li>
-      </ul>
-      <h3>Formatos de lista aceitos</h3>
-      <pre>1 Nome da Carta (SIGLA) 123
-1 Nome da Carta [SIGLA]
-1 [SIGLA] Nome da Carta
-1 Nome da Carta          ← sem edição: usa a impressão padrão do Scryfall
-1 Nome da Carta *F*      ← foil</pre>
-      <p>A sigla pode ser a da Liga (ex.: <code>SCHOB</code>) ou a do Scryfall (ex.: <code>HOB</code>).</p>
+      <h2 data-i18n="help.title">Como usar</h2>
+      <ol data-i18n-html="help.steps"></ol>
+      <h3 data-i18n="help.csvTitle">CSVs aceitos</h3>
+      <p data-i18n-html="help.csvText"></p>
+      <ul data-i18n-html="help.csvList"></ul>
+      <h3 data-i18n="help.listTitle">Formatos de lista aceitos</h3>
+      <pre data-i18n="help.listPre"></pre>
+      <p data-i18n-html="help.listNote"></p>
     </section>
   </main>
 
   <footer class="wrap">
     <p id="dataInfo"></p>
-    <p>Site não oficial, sem vínculo com a LigaMagic ou a Wizards of the Coast.
-      Dados de cartas: <a href="https://scryfall.com" rel="noopener">Scryfall</a>.
-      Magic: The Gathering é marca da Wizards of the Coast; conteúdo de fã sob a
-      <a href="https://company.wizards.com/pt-br/legal/fancontentpolicy" rel="noopener">Fan Content Policy</a>.</p>
-    <p><a href="privacidade.html">Política de privacidade</a></p>
+    <p data-i18n-html="footer.disclaimer"></p>
+    <p><a href="privacidade.html" data-i18n="footer.privacy">Política de privacidade</a></p>
   </footer>
 
   <script type="module" src="app.js"></script>

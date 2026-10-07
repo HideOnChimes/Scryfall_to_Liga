@@ -186,21 +186,26 @@ const WRITERS = {
 };
 
 // ---------------------------------------------------------------- entrada principal
+// erros conhecidos levam um codigo para a interface mostrar a mensagem no idioma escolhido
+const sameFormat = (target) => Object.assign(
+  new Error(`Esse arquivo já está no formato ${label(TARGETS, target)}. Escolha outro formato em "para".`),
+  { code: "sameFormat", target });
+
 // devolve { from, to, header, rows, notes, noteInFile, ext }
 export async function convert(text, { from = "auto", to = "liga", liga, scryfall, onProgress }) {
   if (from === "auto") from = detectFormat(text);
   const ctx = { liga, scryfall, onProgress };
   if (to === "liga") {
-    if (from === "liga") throw new Error("Esse arquivo já está no formato da LigaMagic. Escolha outro formato em \"para\".");
+    if (from === "liga") throw sameFormat("liga");
     const out = from === "lista" ? await convertList(text, ctx) : await convertCSV(text, ctx);
     const rows = out.slice(1);
     return { from, to, header: out[0], rows, notes: rows.map((r) => r[12]), noteInFile: true, ext: "csv" };
   }
   if (from === to && from !== "lista") {
-    throw new Error(`Esse arquivo já está no formato ${label(TARGETS, to)}. Escolha outro formato em "para".`);
+    throw sameFormat(to);
   }
   const recs = from === "lista" ? listRecs(text) : from === "liga" ? ligaRecs(text) : csvRecs(text);
-  if (!recs.length) throw new Error("Não encontrei cartas no arquivo.");
+  if (!recs.length) throw Object.assign(new Error("Não encontrei cartas no arquivo."), { code: "noCards" });
   await resolveAll(recs, ctx);
   const w = WRITERS[to];
   return { from, to, header: w.header, rows: recs.map((r) => w.row(r, card(r))), notes: recs.map(note),
