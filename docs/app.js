@@ -1,5 +1,5 @@
 import { Liga, scryfallClient } from "./conv.js";
-import { SOURCES, TARGETS, label, detectFormat, convert, serialize } from "./formats.js";
+import { SOURCES, TARGETS, ENUMS, label, detectFormat, convert, serialize } from "./formats.js";
 import { makeZip } from "./zip.js";
 import { GOOGLE } from "./config.js";
 
@@ -295,10 +295,20 @@ function show(it) {
     if (notes[ri]) tr.className = "warn";
     for (const [, ci] of cols) {
       const td = tr.insertCell();
-      td.textContent = (ci === "note" ? notes[ri] : r[ci]) ?? "";
+      const value = (ci === "note" ? notes[ri] : r[ci]) ?? "";
       td.dataset.ci = ci;
-      td.contentEditable = "plaintext-only";
-      td.spellcheck = false;
+      const choices = ENUMS[result.to]?.[ci];
+      if (choices) { // opcoes fechadas: lista em vez de texto livre
+        const sel = document.createElement("select");
+        for (const v of choices.includes(value) ? choices : [value, ...choices]) sel.add(new Option(v || "—", v));
+        sel.value = value;
+        td.className = "enum";
+        td.append(sel);
+      } else {
+        td.textContent = value;
+        td.contentEditable = "plaintext-only";
+        td.spellcheck = false;
+      }
       if (isNoteCol(result, ci)) td.className = "comment";
       if (isEdited(result, ri, ci)) td.classList.add("edited");
     }
@@ -333,8 +343,18 @@ function cellOf(e) {
   return { td, ri, ci };
 }
 
+$("table").addEventListener("change", (e) => {
+  const c = e.target.tagName === "SELECT" && cellOf(e);
+  if (!c) return;
+  original(shown.result, c.ri);
+  shown.result.rows[c.ri][c.ci] = e.target.value;
+  c.td.classList.toggle("edited", isEdited(shown.result, c.ri, c.ci));
+  summarize();
+  renderFiles();
+});
+
 $("table").addEventListener("input", (e) => {
-  const c = cellOf(e);
+  const c = e.target.tagName !== "SELECT" && cellOf(e);
   if (!c) return;
   const { rows, notes } = shown.result;
   original(shown.result, c.ri);

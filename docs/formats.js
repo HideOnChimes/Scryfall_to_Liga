@@ -207,6 +207,38 @@ export async function convert(text, { from = "auto", to = "liga", liga, scryfall
     noteInFile: false, ext: to === "lista" ? "txt" : "csv" };
 }
 
+// valores aceitos nas colunas de opcoes fechadas, por formato de destino: { indice da coluna: [valores] }.
+// "" = vazio. Valor que vier no arquivo e nao estiver na lista continua aparecendo como opcao.
+const LANGS_CODE = ["en", "pt", "de", "es", "fr", "it", "ja", "ko", "ru", "zhs", "zht", "ph"];
+export const ENUMS = {
+  liga: {
+    6: ["M", "NM", "SP", "MP", "HP", "D"],
+    7: ["BR", "PT", "EN", "DE", "ES", "FR", "IT", "JP", "KO", "RU", "TW", "CS", "PH"],
+    8: ["M", "R", "U", "C", "S"],
+    9: ["W", "U", "B", "R", "G", "M", "A", "L", "C", "S"],
+    10: ["", "Foil", "Promo", "Foil, Promo"],
+  },
+  manabox: {
+    4: ["normal", "foil", "etched"],
+    5: ["common", "uncommon", "rare", "mythic", "special", "bonus"],
+    8: ["mint", "near_mint", "excellent", "good", "light_played", "played", "poor", "damaged"],
+    9: LANGS_CODE,
+  },
+  moxfield: {
+    4: Object.values(MOX_COND),
+    5: Object.values(LANG_NAME),
+    6: ["", "foil", "etched"],
+    10: ["False", "True"],
+    11: ["False", "True"],
+  },
+  scryfall: {
+    4: LANGS_CODE,
+    5: ["common", "uncommon", "rare", "mythic", "special", "bonus"],
+    7: ["nonfoil", "foil", "etched"],
+    8: ["M", "NM", "SP", "MP", "HP", "D"],
+  },
+};
+
 export function serialize(result) {
   if (result.ext === "txt") return result.rows.map((r) => r[0]).join("\r\n") + "\r\n";
   return toCSV([result.header, ...result.rows]);
