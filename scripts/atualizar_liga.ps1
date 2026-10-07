@@ -35,12 +35,18 @@ if ($Instalar) {
     $nome = "Conversor Liga - atualizar dados"
     $acao = New-ScheduledTaskAction -Execute "powershell.exe" `
         -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$script`""
+    # sem -RepetitionDuration = repete para sempre (Windows 10/11)
     $gatilho = New-ScheduledTaskTrigger -Once -At (Get-Date).Date.AddMinutes(17) `
-        -RepetitionInterval (New-TimeSpan -Hours 6) -RepetitionDuration ([TimeSpan]::MaxValue)
+        -RepetitionInterval (New-TimeSpan -Hours 6)
     $cfg = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable `
         -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew `
         -ExecutionTimeLimit (New-TimeSpan -Hours 6)
-    Register-ScheduledTask -TaskName $nome -Action $acao -Trigger $gatilho -Settings $cfg -Force | Out-Null
+    try {
+        Register-ScheduledTask -TaskName $nome -Action $acao -Trigger $gatilho -Settings $cfg -Force -ErrorAction Stop | Out-Null
+    } catch {
+        Write-Host "Falha ao registrar a tarefa: $_"
+        exit 1
+    }
     Write-Host "Tarefa '$nome' registrada: roda a cada 6h (00:17, 06:17, 12:17, 18:17) com o PC ligado."
     Write-Host "Para rodar agora: Start-ScheduledTask -TaskName '$nome'"
     exit 0
