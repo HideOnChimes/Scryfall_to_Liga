@@ -138,6 +138,30 @@ footer { color: var(--muted); font-size: .82rem; padding-bottom: 40px; }
 .panel textarea { background: var(--p-field); color: var(--p-text); border-color: #3a3631; }
 .panel .status { color: var(--p-muted); }
 .panel .progress { background: #3a3631; }
+/* lista de arquivos do lote */
+.files { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 6px; }
+.files li {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: var(--p-field); border-radius: 8px; padding: 10px 12px; font-size: .92rem;
+}
+.files .fname { font-weight: 600; flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+.files .fmt { color: var(--p-muted); }
+.files .st { color: var(--p-muted); min-width: 90px; }
+.files .st.ok { color: #7fd49b; }
+.files .st.warn { color: #f3d48a; }
+.files .st.err { color: #ff8f7a; }
+.files button {
+  background: transparent; color: var(--p-text); border: 1px solid #4a453e; padding: 4px 10px;
+  border-radius: 6px; font-weight: 600; font-size: .85rem;
+}
+.files button:hover { border-color: var(--accent); }
+.files .rm { border: 0; color: var(--p-muted); font-size: 1.1rem; line-height: 1; padding: 4px 6px; }
+.result-btns { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.result-btns select {
+  background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 10px; font: inherit; max-width: 260px;
+}
+button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
 @media (max-width: 600px) {
   .panel { padding: 24px 16px 18px; }
   .pick-main { padding: 0 18px; }

@@ -7,7 +7,8 @@ Site estático que converte coleções de Magic entre formatos: de ManaBox, Scry
 - `docs/` é o site publicado no GitHub Pages.
   - `conv.js` tem a lógica de conversão (é a porta do `conv.py` original).
   - `formats.js` detecta o formato de entrada e gera as saídas para os outros apps (inclusive LigaMagic → ManaBox).
-  - `app.js` cuida da interface e do Google Drive.
+  - `app.js` cuida da interface, do lote de arquivos e do Google Drive.
+  - `zip.js` gera o .zip para baixar vários arquivos convertidos de uma vez.
   - `config.js` guarda as credenciais do Google Drive.
   - `data/edicoes.json` lista as edições da Liga. O campo `s` indica a data em que as cartas daquela edição foram baixadas.
   - `data/cards/<id>.json` guarda as cartas de cada edição.
