@@ -243,10 +243,12 @@ const LIGA_SHOW = [2, 4, 3, 5, 6, 7, 8, 9, 10, 11, 12];
 const LIGA_LABEL = { 2: "Sigla", 4: "Carta (EN)", 3: "Carta (PT)", 5: "Qtd", 6: "Qual.", 7: "Idioma", 8: "Rar.",
   9: "Cor", 10: "Extras", 11: "#", 12: "Aviso" };
 
+// [titulo, indice da coluna na linha | "note"]; o aviso so vai para o arquivo na saida da Liga (coluna 12)
 function columns(result) {
-  if (result.to === "liga") return LIGA_SHOW.map((i) => [LIGA_LABEL[i], (r) => r[i], i === 12]);
-  return [...result.header.map((h, i) => [h, (r) => r[i], false]), ["Aviso", (r, n) => n, true]];
+  if (result.to === "liga") return LIGA_SHOW.map((i) => [LIGA_LABEL[i], i]);
+  return [...result.header.map((h, i) => [h, i]), ["Aviso", "note"]];
 }
+const isNoteCol = (result, ci) => ci === "note" || (result.noteInFile && ci === 12);
 
 // seletor de arquivo e botao do .zip aparecem quando ha mais de um resultado
 function refreshResults() {
@@ -259,39 +261,110 @@ function refreshResults() {
 }
 $("which").addEventListener("change", () => show(items.filter((it) => it.result)[$("which").value]));
 
-function show(it) {
-  shown = it;
-  const result = it.result;
+function summarize() {
+  const result = shown.result;
   const { rows, notes } = result;
   const warn = notes.filter(Boolean).length;
   const qty = result.to === "liga" ? rows.reduce((s, r) => s + (parseInt(r[5], 10) || 0), 0) : null;
   $("summary").textContent = `${label(SOURCES, result.from)} → ${label(TARGETS, result.to)}: ${rows.length} linhas` +
     (qty != null ? ` (${qty} cartas)` : "") + (warn ? ` · ${warn} para conferir` : " · tudo certo");
+  shown.status = warn ? "warn" : "ok";
+}
+
+function show(it) {
+  shown = it;
+  const result = it.result;
+  const { rows, notes } = result;
+  summarize();
   $("download").textContent = `Baixar ${result.ext.toUpperCase()} ${label(TARGETS, result.to)}`;
   const only = $("onlyWarn").checked;
   const cols = columns(result);
   const table = $("table");
   table.replaceChildren();
   const head = table.createTHead().insertRow();
-  for (const [name] of cols) {
+  for (const [name] of [...cols, [""]]) {
     const th = document.createElement("th");
     th.textContent = name;
     head.appendChild(th);
   }
   const tb = table.createTBody();
-  rows.forEach((r, i) => {
-    if (only && !notes[i]) return;
+  rows.forEach((r, ri) => {
+    if (only && !notes[ri]) return;
     const tr = tb.insertRow();
-    if (notes[i]) tr.className = "warn";
-    for (const [, get, isNote] of cols) {
+    tr.dataset.ri = ri;
+    if (notes[ri]) tr.className = "warn";
+    for (const [, ci] of cols) {
       const td = tr.insertCell();
-      td.textContent = get(r, notes[i]) ?? "";
-      if (isNote) td.className = "comment";
+      td.textContent = (ci === "note" ? notes[ri] : r[ci]) ?? "";
+      td.dataset.ci = ci;
+      td.contentEditable = "plaintext-only";
+      td.spellcheck = false;
+      if (isNoteCol(result, ci)) td.className = "comment";
+      if (it.edited?.has(`${ri}:${ci}`)) td.classList.add("edited");
     }
+    const del = Object.assign(document.createElement("button"), { type: "button", className: "row-del",
+      textContent: "✕", title: "Apagar linha" });
+    tr.insertCell().append(del);
   });
   $("result").hidden = false;
   refreshResults();
 }
+
+// edicao direto na tabela: cada tecla atualiza a linha que vai para o arquivo baixado
+function cellOf(e) {
+  const td = e.target.closest?.("td[data-ci]");
+  if (!td || !shown) return null;
+  const ri = +td.parentElement.dataset.ri;
+  const ci = td.dataset.ci === "note" ? "note" : +td.dataset.ci;
+  return { td, ri, ci };
+}
+
+$("table").addEventListener("input", (e) => {
+  const c = cellOf(e);
+  if (!c) return;
+  const { rows, notes } = shown.result;
+  const v = c.td.textContent;
+  if (c.ci !== "note") rows[c.ri][c.ci] = v;
+  if (isNoteCol(shown.result, c.ci)) notes[c.ri] = v.trim();
+  (shown.edited ||= new Set()).add(`${c.ri}:${c.ci}`);
+  c.td.classList.add("edited");
+  c.td.parentElement.classList.toggle("warn", !!notes[c.ri]);
+  summarize();
+});
+
+$("table").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && cellOf(e)) { e.preventDefault(); e.target.blur(); }
+});
+
+// colar texto formatado (ex.: de uma planilha) entra como texto puro, numa linha so
+$("table").addEventListener("paste", (e) => {
+  if (!cellOf(e)) return;
+  e.preventDefault();
+  document.execCommand("insertText", false, e.clipboardData.getData("text/plain").replace(/\s*[\r\n\t]+\s*/g, " "));
+});
+
+$("table").addEventListener("focusout", () => renderFiles());
+
+$("table").addEventListener("click", (e) => {
+  if (!e.target.classList.contains("row-del")) return;
+  const ri = +e.target.closest("tr").dataset.ri;
+  shown.result.rows.splice(ri, 1);
+  shown.result.notes.splice(ri, 1);
+  shown.edited = null; // indices mudaram
+  show(shown);
+  renderFiles();
+});
+
+$("addRow").addEventListener("click", () => {
+  const { rows, notes, header } = shown.result;
+  rows.push(header.map(() => ""));
+  notes.push("");
+  $("onlyWarn").checked = false;
+  show(shown);
+  const last = $("table").tBodies[0].lastElementChild;
+  last.scrollIntoView({ block: "nearest" });
+  last.querySelector("td[data-ci]").focus();
+});
 
 $("onlyWarn").addEventListener("change", () => shown && show(shown));
 
