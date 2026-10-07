@@ -27,6 +27,8 @@ A fila de cada execução segue esta ordem:
 
 Quando uma carta cai numa edição ainda não indexada, o site marca a linha com `VERIFICAR`.
 
+Promos que o Scryfall agrupa num set genérico (`pw25` "Wizards Play Network 2025", `plst` "The List"...) a Liga guarda na edição "(Promo)" do set de origem. Quando a busca normal falha, o conversor pede ao Scryfall as outras impressões da carta (`/cards/search?q=oracleid:...&unique=prints`), pega a de data de lançamento mais próxima e procura no grupo dela, primeiro nas edições "(Promo)" e depois no set principal (ex.: Gran-Gran `pw25` #14 → `prtla` #1).
+
 ## Atualizar os dados da Liga
 
 A LigaMagic fica atrás do Cloudflare e responde `HTTP 403` para os IPs do GitHub Actions. Por isso o scraping roda num PC comum e o Actions só publica o site.

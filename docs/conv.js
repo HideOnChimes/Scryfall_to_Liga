@@ -157,20 +157,51 @@ export class Liga {
         [byNum, byName] = await this.search(extra, scry, num, numClean);
       }
     }
-    const hits = byNum.length ? byNum : byName;
+    const hits = this.rank(byNum.length ? byNum : byName, foil, num);
     const missing = cands.filter((e) => !e.s).map((e) => e.acronym);
     if (!hits.length) return { hit: null, cands, note: "nao encontrada", missing };
+    if (byNum.length) return { hit: hits[0], cands, note: "", missing };
+    // so o nome bateu: normal em sets antigos (Liga numera do proprio jeito)
+    const eds = new Set(byName.map((h) => h[0].id));
+    return { hit: hits[0], cands, missing,
+      note: eds.size > 1 ? "numero diferente, mais de uma edicao possivel" : "numero da Liga difere do Scryfall" };
+  }
+
+  rank(hits, foil, num) {
     if (hits.length > 1) {
       // prefere flag foil compativel, depois numero exato, depois set principal
       const key = (h) => [((h[1].pF || 0) !== (foil ? 1 : 0)) | 0, (normNum(h[1].sN) !== num) | 0,
         (h[0].idgrouped !== "0") | 0];
       hits.sort((a, b) => { const ka = key(a), kb = key(b); return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2]; });
     }
-    if (byNum.length) return { hit: hits[0], cands, note: "", missing };
-    // so o nome bateu: normal em sets antigos (Liga numera do proprio jeito)
-    const eds = new Set(byName.map((h) => h[0].id));
-    return { hit: hits[0], cands, missing,
-      note: eds.size > 1 ? "numero diferente, mais de uma edicao possivel" : "numero da Liga difere do Scryfall" };
+    return hits;
+  }
+
+  // Promos que o Scryfall agrupa num set generico (pw25 "Wizards Play Network 2025", plst "The List"...)
+  // a Liga guarda na edicao "(Promo)" do set de origem: Gran-Gran pw25 #14 -> prtla #1. Descobre o set
+  // de origem pelas outras impressoes da carta (a de data mais proxima) e procura no grupo dele,
+  // primeiro nas edicoes "(Promo)", depois no set principal (que recebe Extras = Promo).
+  async findViaPrints(scry, foil, scryfall) {
+    if (!scry.promo || !scryfall?.prints) return null;
+    const prints = await scryfall.prints(scry);
+    const t0 = Date.parse(scry.released_at || "") || 0;
+    const dist = (p) => Math.abs((Date.parse(p.released_at || "") || 0) - t0);
+    const others = prints
+      .filter((p) => p.set !== scry.set && !["promo", "token", "memorabilia"].includes(p.set_type))
+      .sort((a, b) => dist(a) - dist(b)).slice(0, 3);
+    for (const p of others) {
+      const alt = { ...scry, set: p.set, set_name: p.set_name, collector_number: p.collector_number };
+      const num = normNum(alt.collector_number);
+      const group = this.candidates(alt);
+      const promoEds = group.filter((e) => /promo/i.test(e.name || ""));
+      for (const cands of [promoEds, group]) {
+        if (!cands.length) continue;
+        const [byNum, byName] = await this.search(cands, alt, num, num);
+        const hits = this.rank(byNum.length ? byNum : byName, foil, num);
+        if (hits.length) return { hit: hits[0], cands, note: "", missing: [] };
+      }
+    }
+    return null;
   }
 
   // lista de texto com sigla da Liga ("1 Bolg's Company [SCHOB]"): procura direto na edicao
@@ -190,8 +221,8 @@ const SCRY = "https://api.scryfall.com";
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function slim(j) {
-  const keep = ["id", "name", "set", "set_name", "collector_number", "rarity", "lang", "promo", "promo_types",
-    "color_identity", "type_line", "flavor_name"];
+  const keep = ["id", "name", "set", "set_name", "set_type", "collector_number", "rarity", "lang", "promo",
+    "promo_types", "color_identity", "type_line", "flavor_name", "oracle_id", "released_at"];
   const o = {};
   for (const k of keep) o[k] = j[k] ?? null;
   if (j.card_faces) o.faces = j.card_faces.map((f) => f.name);
@@ -253,6 +284,14 @@ export function scryfallClient(fetchFn = fetch) {
         sets = { codes: new Set(data.map((s) => s.code)), byName: new Map(data.map((s) => [norm(s.name), s.code])) };
       }
       return sets;
+    },
+    // todas as impressoes de uma carta (para achar o set de origem de uma promo generica)
+    async prints(card) {
+      const q = card.oracle_id ? `oracleid:${card.oracle_id}` : `!"${card.name}"`;
+      const url = `${SCRY}/cards/search?${new URLSearchParams({ q, unique: "prints", order: "released" })}`;
+      await pause(GAP);
+      const r = await call(url, { headers: { Accept: "application/json" } });
+      return r.ok ? ((await r.json()).data || []).map(slim) : [];
     },
     async named(name, set) {
       const q = new URLSearchParams({ exact: name });
@@ -407,10 +446,12 @@ function emit(b, qty, quality, lang, extras, comment) {
     extras.join(", "), b.num, comment];
 }
 
-async function convertScry(liga, scry, { qty, quality, lang, foil }) {
+async function convertScry(liga, scry, { qty, quality, lang, foil, scryfall }) {
   let promo = (scry.promo_types || []).some((p) => PROMO_TYPES.has(p)) ||
     (scry.set.toLowerCase().startsWith("p") && liga.byAcr.has(scry.set.toLowerCase().slice(1)));
-  const { hit, cands, note, missing } = await liga.find(scry, foil);
+  let found = await liga.find(scry, foil);
+  if (!found.hit) found = (await liga.findViaPrints(scry, foil, scryfall)) || found;
+  const { hit, cands, note, missing } = found;
   if (hit && (hit[0].name || "").toLowerCase().includes("promo")) promo = false; // ja e edicao "(Promos)"
   const extras = [foil && "Foil", promo && "Promo"].filter(Boolean);
   const ref = `Scryfall ${scry.set} #${scry.collector_number}`;
@@ -456,7 +497,7 @@ export async function convertCSV(text, { liga, scryfall, onProgress }) {
     const r = recs[i], s = r.scry;
     onProgress?.("liga", i + 1, recs.length, r.name);
     const lang = r.lang || LANG[(s?.lang || "en").toLowerCase()] || "EN";
-    const opts = { qty: r.qty, quality: r.quality, lang, foil: r.foil };
+    const opts = { qty: r.qty, quality: r.quality, lang, foil: r.foil, scryfall };
     // sigla da Liga que o Scryfall nao conhece (ex.: "schob"): procura direto na edicao da Liga
     const rawSet = r.setCode || r.setAny;
     if (rawSet && (!s || !(r.via.id || r.via.set))) {
@@ -491,7 +532,7 @@ export async function convertList(text, { liga, scryfall, onProgress }) {
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
     onProgress?.("liga", i + 1, items.length, it.name);
-    const opts = { qty: it.qty, quality: "NM", lang: "EN", foil: it.foil };
+    const opts = { qty: it.qty, quality: "NM", lang: "EN", foil: it.foil, scryfall };
     const extras = it.foil ? ["Foil"] : [];
     if (it.set) {
       const direct = await liga.findDirect(it.set, it.name, it.number);
