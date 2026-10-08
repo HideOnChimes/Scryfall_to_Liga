@@ -54,10 +54,32 @@ if ($Instalar) {
 
 Set-Location $repo
 $env:PYTHONIOENCODING = "utf-8"
+# nunca abrir janela pedindo senha: a tarefa roda escondida e ficaria travada ate o limite de 6h
+$env:GIT_TERMINAL_PROMPT = "0"
+$env:GCM_INTERACTIVE = "never"
+
+function Push-Dados {
+    # 3 tentativas; se nao der, o commit fica local e sobe na proxima execucao
+    for ($i = 1; $i -le 3; $i++) {
+        git push --quiet 2>&1 | ForEach-Object { Log "  git push: $_" }
+        if ($LASTEXITCODE -eq 0) { return $true }
+        Log "git push falhou (tentativa $i)"
+        if ($i -lt 3) { Start-Sleep -Seconds 60 }
+    }
+    return $false
+}
+
 Log "inicio (max=$Max, minutes=$Minutes, only='$Only')"
 
-git pull --rebase --quiet
+git pull --rebase --quiet 2>&1 | ForEach-Object { Log "  git pull: $_" }
 if ($LASTEXITCODE -ne 0) { Log "git pull falhou"; exit 1 }
+
+# commit de uma execucao anterior que nao conseguiu subir? publica logo, antes das 5h de scraping
+git rev-list --count "@{u}..HEAD" 2>$null | ForEach-Object { $pendentes = [int]$_ }
+if (-not $NoPush -and $pendentes -gt 0) {
+    Log "$pendentes commit(s) pendente(s) de execucao anterior, publicando"
+    if (Push-Dados) { Log "publicado (pendente)" }
+}
 
 $pyArgs = @("-u", "scripts\build_data.py", "--max", $Max, "--minutes", $Minutes)
 if ($Only) { $pyArgs += "--only"; $pyArgs += $Only.Split(" ") }
@@ -69,6 +91,5 @@ git diff --cached --quiet
 if ($LASTEXITCODE -eq 0) { Log "nada mudou"; exit 0 }
 git commit --quiet -m "dados: atualiza edicoes da Liga"
 if ($NoPush) { Log "commit feito, push pulado (-NoPush)"; exit 0 }
-git push --quiet
-if ($LASTEXITCODE -ne 0) { Log "git push falhou"; exit 1 }
+if (-not (Push-Dados)) { Log "commit ficou local; sobe na proxima execucao"; exit 1 }
 Log "publicado"
