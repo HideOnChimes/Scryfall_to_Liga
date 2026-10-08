@@ -1,0 +1,230 @@
+﻿Diagnose log at 2026-10-08T12:06:33Z
+
+AppPath: C:\Program Files\Git\mingw64\bin\git-credential-manager.exe
+InstallDir: C:\Program Files\Git\mingw64\bin\
+Version: 2.7.3+5fa7116896c82164996a609accd1c5ad90fe730a
+
+------------
+Diagnostic: Environment
+Skipped: False
+Success: True
+Exception: None
+Log:
+OSType: Windows
+OSVersion: 10.0 (build 19045)
+Reading environment variables... OK
+ Variables:
+GIT_LFS_PATH=C:\Program Files\Git LFS
+CLAUDE_CODE_CHILD_SESSION=1
+CLAUDE_CODE_MESSAGING_TOKEN=c7f501fd35e335f5462204824ecead4e
+OS=Windows_NT
+TMP=C:\Users\GG_003~1\AppData\Local\Temp
+NO_COLOR=1
+CLAUDE_CODE_SDK_HAS_HOST_AUTH_REFRESH=1
+CLAUDE_CODE_ACCOUNT_UUID=57aed389-3db3-4f18-9393-2a0c6e52b235
+USE_STAGING_OAUTH=
+CLAUDE_CODE_REPORT_FINDINGS=1
+ProgramData=C:\ProgramData
+CLAUDE_CODE_ENTRYPOINT=claude-desktop
+PATH=C:/Program Files/Git/mingw64/libexec/git-core;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\Users\GG_0031712\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Program Files\nodejs\;C:\Program Files\dotnet\;C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\;C:\Program Files\Git LFS;C:\Users\GG_0031712\.local\bin;C:\Users\GG_0031712\AppData\Local\Microsoft\WindowsApps;C:\Users\GG_0031712\AppData\Local\PowerToys\DSCModules\;C:\Users\GG_0031712\AppData\Local\GitHubDesktop\bin;C:\Users\GG_0031712\AppData\Roaming\npm;C:\Users\GG_0031712\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\GG_0031712\AppData\Local\Programs\Zed\bin;C:\Users\GG_0031712\.dotnet\tools;C:\Users\GG_0031712\AppData\Local\Muse Hub\lib;C:\Users\GG_0031712\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0-full_build\bin;C:\Users\GG_0031712\AppData\Local\Unity\bin;C:\Program Files\nodejs;C:\Program Files\Git\mingw64\bin
+CLAUDE_CODE_EMIT_TOOL_USE_SUMMARIES=false
+PSExecutionPolicyPreference=Bypass
+API_TIMEOUT_MS=900000
+OneDriveConsumer=C:\Users\GG_0031712\OneDrive
+SENTRY-TRACE=a1080cbb46434bf9af6410fdba37b316-a20f7edc2edafd5c
+USERDOMAIN=DESKTOP-8STGU6K
+ComSpec=C:\WINDOWS\system32\cmd.exe
+CLAUDE_CODE_DESKTOP_APP_VERSION=2.26454.2
+PROCESSOR_REVISION=9e09
+CLAUDE_AGENT_SDK_MCP_NO_PREFIX=0
+NUMBER_OF_PROCESSORS=4
+MCP_SERVER_CONNECTION_BATCH_SIZE=8
+LC_CTYPE=C.UTF-8
+CLAUDE_PREVIEW_CLASSIFIER_FLOOR=1
+COLORTERM=truecolor
+PROCESSOR_LEVEL=6
+CLAUDE_CODE_SESSION_ID=6c710291-77e4-4893-8189-1a51b62601ef
+SystemDrive=C:
+PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL
+COREPACK_ENABLE_AUTO_PIN=0
+NoDefaultCurrentDirectoryInExePath=1
+USERPROFILE=C:\Users\GG_0031712
+CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1
+CLAUDE_PID=23512
+CommonProgramFiles(x86)=C:\Program Files (x86)\Common Files
+CLAUDE_CODE_EAGER_FLUSH=1
+CLAUDE_CODE_ENABLE_SDK_FILE_CHECKPOINTING=true
+CLAUDE_CODE_SESSION_ATTENDED=1
+COMPUTERNAME=DESKTOP-8STGU6K
+PSModulePath=C:\Users\GG_0031712\Documents\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules
+CLAUDE_CODE_ENABLE_ASK_USER_QUESTION_TOOL=true
+GIT_EDITOR=true
+LOGONSERVER=\\DESKTOP-8STGU6K
+HOMEDRIVE=C:
+CLAUDE_AGENT_SDK_VERSION=0.3.293
+GIT_ASKPASS=
+CHROME_CRASHPAD_PIPE_NAME=\\.\pipe\crashpad_41108_QAQJRQMYJGSLCTTV
+CLAUDE_CODE_OAUTH_SCOPES=user:inference user:file_upload user:profile user:sessions:claude_code user:plugins
+PUBLIC=C:\Users\Public
+AI_AGENT=claude-code_2-1-293_agent
+BAGGAGE=sentry-environment=production,sentry-release=Claude%402.26454.2,sentry-public_key=2f98127cbffe4740b1f767a2de77d23b,sentry-trace_id=a1080cbb46434bf9af6410fdba37b316,sentry-org_id=1158394
+ProgramW6432=C:\Program Files
+windir=C:\WINDOWS
+CLAUDE_CODE_USER_EMAIL=gazgames@gazgames.com.br
+PYTHONIOENCODING=utf-8:surrogateescape
+PROMPT=$P$G
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 158 Stepping 9, GenuineIntel
+APPDATA=C:\Users\GG_0031712\AppData\Roaming
+HOMEPATH=\Users\GG_0031712
+CLAUDE_CODE_SIMPLE=0
+GIT_TERMINAL_PROMPT=0
+ANTHROPIC_BASE_URL=https://api.anthropic.com
+TERM=xterm-256color
+LOCALAPPDATA=C:\Users\GG_0031712\AppData\Local
+PYTHONDONTWRITEBYTECODE=1
+CLAUDE_CODE_HOST_SESSION_ID=local_1852a448-eda0-4b1c-b05f-729fea33e2ba
+ZES_ENABLE_SYSMAN=1
+PLINK_PROTOCOL=ssh
+USE_LOCAL_OAUTH=
+OneDrive=C:\Users\GG_0031712\OneDrive
+USERNAME=GG_0031712
+CLAUDECODE=1
+ProgramFiles=C:\Program Files
+DriverData=C:\Windows\System32\Drivers\DriverData
+ProgramFiles(x86)=C:\Program Files (x86)
+GCM_INTERACTIVE=never
+TMPDIR=C:\Users\GG_003~1\AppData\Local\Temp
+TEMP=C:\Users\GG_003~1\AppData\Local\Temp
+MCP_CONNECTION_NONBLOCKING=true
+CommonProgramW6432=C:\Program Files\Common Files
+CLAUDE_CODE_MESSAGING_SOCKET=\\.\pipe\LOCAL\cc-msg-5fbd5306fc7f4109f7793f28d5c80000
+GIT_EXEC_PATH=C:/Program Files/Git/mingw64/libexec/git-core
+ALLUSERSPROFILE=C:\ProgramData
+CLAUDE_CODE_DISABLE_CRON=
+GIT_TRACE2_PARENT_SID=16dd8aa0-e54e-4f31-a4c5-0510cae32ad7
+CommonProgramFiles=C:\Program Files\Common Files
+PROCESSOR_ARCHITECTURE=AMD64
+MSYSTEM=MINGW64
+DISABLE_AUTOUPDATER=1
+USERDOMAIN_ROAMINGPROFILE=DESKTOP-8STGU6K
+NODE_USE_SYSTEM_CA=1
+SystemRoot=C:\WINDOWS
+DISABLE_MICROCOMPACT=1
+CLAUDE_CODE_ORGANIZATION_UUID=3b26d3e9-439f-4303-be7f-c7613c8fd986
+CLAUDE_CODE_TERMINAL_MCP_TOOLS=mcp__ccd_turn__wrap_up
+HOME=C:\Users\GG_0031712
+
+
+------------
+Diagnostic: File system
+Skipped: False
+Success: True
+Exception: None
+Log:
+Temporary directory is 'C:\Users\GG_0031712\AppData\Local\Temp\'...
+Checking basic file I/O...
+Writing to temporary file 'C:\Users\GG_0031712\AppData\Local\Temp\7c144a37a8069da349aa2df3'... OK
+Reading from temporary file 'C:\Users\GG_0031712\AppData\Local\Temp\7c144a37a8069da349aa2df3'... OK
+Deleting temporary file 'C:\Users\GG_0031712\AppData\Local\Temp\7c144a37a8069da349aa2df3'... OK
+Testing IFileSystem instance...
+UserHomePath: C:\Users\GG_0031712
+UserDataDirectoryPath: C:\Users\GG_0031712\.gcm
+GetCurrentDirectory(): C:\Users\GG_0031712\Desktop\PG\Conversor csv Liga\conversor-liga-web
+
+------------
+Diagnostic: Networking
+Skipped: False
+Success: True
+Exception: None
+Log:
+Checking networking and HTTP stack...
+Creating HTTP client... OK
+IsNetworkAvailable: True
+Sending HEAD request to http://example.com...Sending HEAD request to https://example.com... OK
+ OK
+Acquiring free TCP port... OK
+Testing local HTTP loopback connections...
+Creating new HTTP listener for http://localhost:53312/... OK
+Waiting for loopback connection... OK
+Writing response... OK
+Waiting for response data... OK
+Loopback connection data OK
+
+------------
+Diagnostic: Git
+Skipped: False
+Success: True
+Exception: None
+Log:
+Getting Git version... OK
+Git version is '2.54.0.windows.1'
+Locating current repository...Git repository at 'C:/Users/GG_0031712/Desktop/PG/Conversor csv Liga/conversor-liga-web/.git'
+ OK
+Listing all Git configuration... OK
+Git configuration:
+file:C:/Program Files/Git/etc/gitconfig	diff.astextplain.textconv=astextplain
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.clean=git-lfs clean -- %f
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.smudge=git-lfs smudge -- %f
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.process=git-lfs filter-process
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.required=true
+file:C:/Program Files/Git/etc/gitconfig	http.sslbackend=schannel
+file:C:/Program Files/Git/etc/gitconfig	core.autocrlf=true
+file:C:/Program Files/Git/etc/gitconfig	core.fscache=true
+file:C:/Program Files/Git/etc/gitconfig	core.symlinks=false
+file:C:/Program Files/Git/etc/gitconfig	pull.rebase=false
+file:C:/Program Files/Git/etc/gitconfig	credential.helper=manager
+file:C:/Program Files/Git/etc/gitconfig	credential.https://dev.azure.com.usehttppath=true
+file:C:/Program Files/Git/etc/gitconfig	init.defaultbranch=main
+file:C:/Users/GG_0031712/.gitconfig	filter.lfs.clean=git-lfs clean -- %f
+file:C:/Users/GG_0031712/.gitconfig	filter.lfs.smudge=git-lfs smudge -- %f
+file:C:/Users/GG_0031712/.gitconfig	filter.lfs.process=git-lfs filter-process
+file:C:/Users/GG_0031712/.gitconfig	filter.lfs.required=true
+file:C:/Users/GG_0031712/.gitconfig	user.name=Gerente de Projeto
+file:C:/Users/GG_0031712/.gitconfig	user.email=142552149+HideOnChimes@users.noreply.github.com
+file:.git/config	core.repositoryformatversion=0
+file:.git/config	core.filemode=false
+file:.git/config	core.bare=false
+file:.git/config	core.logallrefupdates=true
+file:.git/config	core.symlinks=false
+file:.git/config	core.ignorecase=true
+file:.git/config	remote.origin.url=https://github.com/HideOnChimes/Scryfall_to_Liga.git
+file:.git/config	remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+file:.git/config	branch.main.remote=origin
+file:.git/config	branch.main.merge=refs/heads/main
+
+
+------------
+Diagnostic: Credential storage
+Skipped: False
+Success: True
+Exception: None
+Log:
+ICredentialStore instance is of type: CredentialStore
+Writing test credential... OK
+Reading test credential... OK
+Deleting test credential... OK
+
+------------
+Diagnostic: Microsoft authentication (AAD/MSA)
+Skipped: False
+Success: True
+Exception: None
+Log:
+Broker is not enabled.
+Flow type is: Auto
+Gathering MSAL token cache data... OK
+CacheDirectory: C:\Users\GG_0031712\AppData\Local\.IdentityService
+CacheFileName: msal.cache
+CacheFilePath: C:\Users\GG_0031712\AppData\Local\.IdentityService\msal.cache
+Creating cache helper... OK
+Verifying MSAL token cache persistence... OK
+
+------------
+Diagnostic: GitHub API
+Skipped: False
+Success: True
+Exception: None
+Log:
+Using 'https://github.com/' as API target.
+Querying '/meta' endpoint... OK
+
