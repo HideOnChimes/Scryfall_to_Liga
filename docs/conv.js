@@ -9,8 +9,12 @@ export const LIGA_HEADER = ["Edicao (PTBR)", "Edicao (EN)", "Edicao (Sigla)", "C
 export const LANG = { en: "EN", pt: "PT", de: "DE", es: "ES", fr: "FR", it: "IT", ja: "JP", ko: "KO",
   ru: "RU", zht: "TW", zhs: "CS", ph: "PH" };
 const RARITY = { mythic: "M", rare: "R", uncommon: "U", common: "C", special: "S", bonus: "S" };
-// codigos internos da Liga (descobertos comparando com um export real)
-const LIGA_RARITY = { 1: "C", 2: "U", 3: "R", 4: "M" };
+// codigos internos da Liga (descobertos comparando com um export real e com o cache de cards):
+// 5 special, 6 token/theme card, 11 emblema, 13 art card. A letra do CSV para 6/11/13 nao e
+// documentada (o cabecalho so lista M R U C), entao vao como "S" igual ao special.
+const LIGA_RARITY = { 1: "C", 2: "U", 3: "R", 4: "M", 5: "S", 6: "S", 11: "S", 13: "S" };
+// layouts do Scryfall que a Liga trata como raridade/cor especial (o Scryfall poe rarity "common")
+const SPECIAL_LAYOUTS = new Set(["token", "double_faced_token", "emblem", "art_series", "front_card"]);
 const LIGA_COLOR = { 2: "B", 3: "G", 4: "L", 5: "M", 6: "R", 7: "U", 8: "W", 9: "C", 10: "S" };
 const PROMO_TYPES = new Set(["prerelease", "promopack", "playpromo", "datestamped", "stamped", "buyabox", "bundle",
   "storechampionship", "gameday", "release", "openhouse", "planeswalkerstamped"]);
@@ -44,7 +48,13 @@ function namesMatch(ligaName, scry) {
   return false;
 }
 
+function rarityFromScry(scry) {
+  if (SPECIAL_LAYOUTS.has(scry.layout)) return "S";
+  return RARITY[scry.rarity] || "";
+}
+
 function colorFromScry(scry) {
+  if (["emblem", "art_series", "front_card"].includes(scry.layout)) return "S"; // cor 10 da Liga
   const t = (scry.type_line || "").toLowerCase();
   const ci = scry.color_identity || [];
   if (t.includes("land") && !ci.length) return "L";
@@ -222,7 +232,7 @@ const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function slim(j) {
   const keep = ["id", "name", "set", "set_name", "set_type", "collector_number", "rarity", "lang", "promo",
-    "promo_types", "color_identity", "type_line", "flavor_name", "oracle_id", "released_at"];
+    "promo_types", "color_identity", "type_line", "flavor_name", "layout", "oracle_id", "released_at"];
   const o = {};
   for (const k of keep) o[k] = j[k] ?? null;
   if (j.card_faces) o.faces = j.card_faces.map((f) => f.name);
@@ -427,7 +437,7 @@ function rowFromHit(ed, c, scry) {
   return {
     ed_pt: ligaText(ed.namept), ed_en: ligaText(ed.nameen || ed.name), sigla: ed.acronym,
     card_pt: ligaText(c.nPT), card_en: ligaText(c.nEN), num: c.sN,
-    rar: LIGA_RARITY[c.iR] || (scry && RARITY[scry.rarity]) || "",
+    rar: LIGA_RARITY[c.iR] || (scry ? rarityFromScry(scry) : ""),
     col: LIGA_COLOR[c.iC] || (scry ? colorFromScry(scry) : ""),
   };
 }
@@ -437,7 +447,7 @@ function rowFromMiss(cands, scry) {
   return {
     ed_pt: main ? ligaText(main.namept) : "", ed_en: main ? ligaText(main.name) : scry.set_name,
     sigla: main ? main.acronym : scry.set, card_pt: "", card_en: scry.name, num: scry.collector_number,
-    rar: RARITY[scry.rarity] || "", col: colorFromScry(scry),
+    rar: rarityFromScry(scry), col: colorFromScry(scry),
   };
 }
 
