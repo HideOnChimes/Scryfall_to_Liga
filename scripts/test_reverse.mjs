@@ -1,6 +1,6 @@
 // Ida e volta: converte cada "X - Liga.csv" para ManaBox e confere se a carta
 // (Scryfall ID), quantidade e foil batem com o "X.csv" original do ManaBox.
-// Uso: node scripts/test_reverse.mjs ../Colecoes
+// Uso: node scripts/test_reverse.mjs Coleções
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

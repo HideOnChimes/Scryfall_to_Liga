@@ -1,6 +1,6 @@
 // Gera o mesmo export em formato de varios apps a partir de um CSV do ManaBox
 // e confere se todos convertem igual ao "X - Liga.csv" de referencia.
-// Uso: node scripts/test_formats.mjs ../Colecoes/Hobbit.csv
+// Uso: node scripts/test_formats.mjs Coleções/Hobbit.csv
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

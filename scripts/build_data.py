@@ -14,7 +14,7 @@ roda num PC comum via scripts/atualizar_liga.ps1, que faz o commit e o push de d
 Uso:
     python scripts/build_data.py                         # execucao normal (via scripts/atualizar_liga.ps1)
     python scripts/build_data.py --max 5 --delay 360
-    python scripts/build_data.py --seed ../.cache_liga   # importa o cache do conv.py, sem acessar a Liga
+    python scripts/build_data.py --seed .cache_liga   # importa o cache do conv.py, sem acessar a Liga
     python scripts/build_data.py --only hob tla          # forca edicoes especificas
 """
 import argparse

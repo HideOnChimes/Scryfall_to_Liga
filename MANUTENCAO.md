@@ -5,7 +5,7 @@ Notas para quem mantém o site. Para usar o conversor, veja o [README](README.md
 ## Como funciona
 
 - `docs/` é o site publicado no GitHub Pages.
-  - `conv.js` tem a lógica de conversão (é a porta do `conv.py` original).
+  - `conv.js` tem a lógica de conversão (é a porta do `conv.py`, que fica na raiz deste repositório e continua funcionando como conversor de linha de comando; ele também importa para o banco da plataforma com `--db`, cujo schema está no repositório `estoque`).
   - `formats.js` detecta o formato de entrada e gera as saídas para os outros apps (inclusive LigaMagic → ManaBox).
   - `app.js` cuida da interface, do lote de arquivos e do Google Drive.
   - `i18n.js` tem os textos do site em português, inglês e espanhol.
@@ -97,23 +97,23 @@ Depois abra http://localhost:8000.
 Para testar a conversão contra os CSVs gerados pelo `conv.py`:
 
 ```bash
-node scripts/test_node.mjs ../Coleções
+node scripts/test_node.mjs Coleções
 ```
 
 Para testar os formatos dos outros apps (gerados a partir de um CSV do ManaBox):
 
 ```bash
-node scripts/test_formats.mjs ../Coleções/Hobbit.csv
+node scripts/test_formats.mjs Coleções/Hobbit.csv
 ```
 
 Para testar a ida e volta (CSV da Liga → ManaBox, comparando com o original):
 
 ```bash
-node scripts/test_reverse.mjs ../Coleções
+node scripts/test_reverse.mjs Coleções
 ```
 
 Para importar o cache do `conv.py` sem acessar a Liga:
 
 ```bash
-python scripts/build_data.py --seed ../.cache_liga
+python scripts/build_data.py --seed .cache_liga
 ```
