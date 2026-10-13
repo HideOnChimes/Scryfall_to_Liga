@@ -160,6 +160,14 @@ async function downloadFromDrive(doc) {
   addFile(await r.text(), sheet ? `${doc.name}.csv` : doc.name);
 }
 
+// O Picker cria o diálogo de forma assíncrona; espera ele aparecer e rola a página até ele ficar no meio.
+function centerPicker(tries = 40) {
+  // Diálogos de aberturas anteriores continuam no DOM, escondidos: pega o visível.
+  const dlg = [...document.querySelectorAll(".picker-dialog")].find((d) => d.checkVisibility({ visibilityProperty: true }));
+  if (dlg) dlg.scrollIntoView({ behavior: "smooth", block: "center" });
+  else if (tries) setTimeout(() => centerPicker(tries - 1), 50);
+}
+
 $("drive").addEventListener("click", async () => {
   if (!driveReady) {
     setStatus("drive.notConfigured");
@@ -168,12 +176,20 @@ $("drive").addEventListener("click", async () => {
   try {
     await driveReady;
     await driveToken();
-    const view = new google.picker.DocsView(google.picker.ViewId.DOCS)
-      .setMimeTypes("text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel,application/vnd.google-apps.spreadsheet")
-      .setIncludeFolders(true);
+    const mimes = "text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel,application/vnd.google-apps.spreadsheet";
+    const docs = () => new google.picker.DocsView(google.picker.ViewId.DOCS)
+      .setMimeTypes(mimes)
+      .setMode(google.picker.DocsViewMode.GRID);
     new google.picker.PickerBuilder()
-      .addView(view)
+      .addView(docs().setIncludeFolders(true).setParent("root").setLabel(t("drive.tab.myDrive"))) // navega por pastas
+      .addView(docs().setLabel(t("drive.tab.recent"))) // todos os arquivos, mais recentes primeiro
+      .addView(docs().setOwnedByMe(false)) // compartilhados comigo
+      .addView(docs().setStarred(true).setLabel(t("drive.tab.starred")))
+      .addView(docs().setEnableDrives(true).setIncludeFolders(true)) // drives compartilhados
+      .addView(new google.picker.DocsUploadView())
       .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+      .enableFeature(google.picker.Feature.SUPPORT_DRIVES)
+      .setSize(1051, 650)
       .setOAuthToken(token)
       .setDeveloperKey(GOOGLE.apiKey)
       .setAppId(GOOGLE.appId)
@@ -190,6 +206,7 @@ $("drive").addEventListener("click", async () => {
       })
       .build()
       .setVisible(true);
+    centerPicker();
   } catch (e) {
     console.error(e);
     setStatus("drive.openError", errText(e));
