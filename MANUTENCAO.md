@@ -49,6 +49,16 @@ powershell -ExecutionPolicy Bypass -File scripts\atualizar_liga.ps1 -Only "hob t
 
 O log fica em `scripts/atualizar_liga.log`.
 
+### Segundo PC (das mais antigas para as mais novas)
+
+Para indexar mais rápido, outro PC pode rodar com `-Antigas`. Ele só pega edições nunca indexadas, começando pelas mais antigas, e não refaz as recentes (isso fica com o PC principal). Os dois se encontram no meio.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\atualizar_liga.ps1 -Antigas -Instalar
+```
+
+O segundo PC precisa de um clone do repositório com permissão de push (colaborador no GitHub). Como os dois commitam `state.json` e `edicoes.json`, o push às vezes é recusado. Nesse caso o script faz `git pull --rebase -X theirs` (fica com os arquivos locais) e roda `build_data.py --merge-remote`, que junta o `state.json` do remoto com o local antes de tentar o push de novo.
+
 ## Publicar no GitHub Pages
 
 1. Crie um repositório público no GitHub, por exemplo `conversor-liga`.

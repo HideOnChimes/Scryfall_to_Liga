@@ -16,6 +16,8 @@ Uso:
     python scripts/build_data.py --max 5 --delay 360
     python scripts/build_data.py --seed .cache_liga   # importa o cache do conv.py, sem acessar a Liga
     python scripts/build_data.py --only hob tla          # forca edicoes especificas
+    python scripts/build_data.py --antigas               # 2o PC: nunca baixadas, das mais antigas p/ as novas
+    python scripts/build_data.py --merge-remote          # junta o state.json do remoto (@{u}) com o local
 """
 import argparse
 import datetime as dt
@@ -23,6 +25,7 @@ import html
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 import urllib.error
@@ -110,7 +113,7 @@ def write_editions(eds, state):
     save(os.path.join(DATA, "edicoes.json"), out)
 
 
-def queue(eds, state, today):
+def queue(eds, state, today, oldest=False):
     never, stale = [], []
     for e in eds:
         r = release(e)
@@ -122,6 +125,10 @@ def queue(eds, state, today):
         elif (today - r).days <= RECENT_DAYS and \
                 (today - dt.date.fromisoformat(last[:10])).days >= REFRESH_DAYS:
             stale.append(e)
+    if oldest:
+        # segundo PC: so as nunca baixadas, das mais antigas para as mais novas, ate encontrar o outro
+        never.sort(key=release)
+        return never
     never.sort(key=release, reverse=True)
     stale.sort(key=lambda e: state[e["id"]])
     # alterna: recentes desatualizadas primeiro (mudam mais), depois as nunca baixadas
@@ -141,6 +148,29 @@ def seed(cache_dir, state):
     return eds
 
 
+def merge_remote(state):
+    """Junta o state.json do remoto com o local (fica a data mais nova de cada edicao).
+
+    Dois PCs indexando ao mesmo tempo sempre conflitam no state.json/edicoes.json (uma linha so).
+    O atualizar_liga.ps1 faz o rebase mantendo os arquivos locais e chama isto para recuperar
+    as edicoes que o outro PC baixou."""
+    r = subprocess.run(["git", "show", "@{u}:docs/data/state.json"], cwd=ROOT, capture_output=True)
+    if r.returncode != 0:
+        sys.exit("git show @{u}:docs/data/state.json falhou: " + r.stderr.decode("utf-8", "ignore"))
+    other = json.loads(r.stdout.decode("utf-8"))
+    novas = 0
+    for k, v in other.items():
+        if v > state.get(k, ""):
+            novas += k not in state
+            state[k] = v
+    eds = load(os.path.join(DATA, "edicoes.json"), [])
+    for e in eds:
+        if e["id"] in state:
+            e["s"] = state[e["id"]][:10]
+    save(os.path.join(DATA, "edicoes.json"), eds)
+    print(f"merge: {novas} edicoes vindas do remoto, {len(state)} no total")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--max", type=int, default=12, help="maximo de edicoes baixadas nesta execucao")
@@ -149,12 +179,21 @@ def main():
     ap.add_argument("--only", nargs="*", help="siglas especificas para baixar agora")
     ap.add_argument("--minutes", type=float, default=0,
                     help="para antes de passar desse tempo (0 = sem limite); evita estourar o timeout do Actions")
+    ap.add_argument("--antigas", action="store_true",
+                    help="so edicoes nunca baixadas, das mais antigas para as mais novas (para um segundo PC)")
+    ap.add_argument("--merge-remote", action="store_true",
+                    help="junta o state.json do remoto (@{u}) com o local, sem acessar a Liga")
     a = ap.parse_args()
 
     state_path = os.path.join(DATA, "state.json")
     state = load(state_path, {})
     today = dt.date.today()
     start = time.monotonic()
+
+    if a.merge_remote:
+        merge_remote(state)
+        save(state_path, state)
+        return
 
     if a.seed:
         eds = seed(a.seed, state)
@@ -168,7 +207,7 @@ def main():
         want = {s.lower() for s in a.only}
         todo = [e for e in eds if e["acronym"].lower() in want]
     else:
-        todo = queue(eds, state, today)
+        todo = queue(eds, state, today, a.antigas)
     todo = todo[:a.max]
     print(f"{len(eds)} edicoes; baixando {len(todo)}: {', '.join(e['acronym'] for e in todo)}")
 

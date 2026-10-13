@@ -9,6 +9,7 @@
 #   powershell -ExecutionPolicy Bypass -File scripts\atualizar_liga.ps1 -Only "hob tla"
 #   powershell -ExecutionPolicy Bypass -File scripts\atualizar_liga.ps1 -Max 0 -NoPush  # so testa (lista de edicoes)
 #   powershell -ExecutionPolicy Bypass -File scripts\atualizar_liga.ps1 -Instalar    # agenda a cada 6h (Agendador de Tarefas)
+#   powershell -ExecutionPolicy Bypass -File scripts\atualizar_liga.ps1 -Antigas -Instalar  # 2o PC: das mais antigas p/ as novas
 #
 # Log em scripts\atualizar_liga.log.
 
@@ -17,6 +18,7 @@ param(
     [double]$Minutes = 330,  # para antes de passar desse tempo
     [string]$Only = "",      # siglas separadas por espaco, opcional
     [switch]$NoPush,         # commita mas nao faz push
+    [switch]$Antigas,        # 2o PC: so edicoes nunca baixadas, das mais antigas para as mais novas
     [switch]$Instalar        # registra a tarefa agendada e sai
 )
 
@@ -34,7 +36,7 @@ function Log($m) {
 if ($Instalar) {
     $nome = "Conversor Liga - atualizar dados"
     $acao = New-ScheduledTaskAction -Execute "powershell.exe" `
-        -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$script`""
+        -Argument ("-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$script`"" + $(if ($Antigas) { " -Antigas" } else { "" }))
     # sem -RepetitionDuration = repete para sempre (Windows 10/11)
     $gatilho = New-ScheduledTaskTrigger -Once -At (Get-Date).Date.AddMinutes(17) `
         -RepetitionInterval (New-TimeSpan -Hours 6)
@@ -58,21 +60,38 @@ $env:PYTHONIOENCODING = "utf-8"
 $env:GIT_TERMINAL_PROMPT = "0"
 $env:GCM_INTERACTIVE = "never"
 
+function Sincroniza {
+    # outro PC (indexando das antigas, ou vice-versa) publicou no meio tempo. state.json e
+    # edicoes.json sao uma linha so e sempre conflitam: o rebase fica com a versao local
+    # (-X theirs = commit local) e o build_data.py junta o state.json do remoto
+    git pull --rebase -X theirs --quiet 2>&1 | ForEach-Object { Log "  git pull: $_" }
+    if ($LASTEXITCODE -ne 0) { git rebase --abort 2>$null; Log "rebase falhou"; return }
+    & python -u scripts\build_data.py --merge-remote 2>&1 | ForEach-Object { Log $_ }
+    git add docs/data
+    git diff --cached --quiet
+    if ($LASTEXITCODE -ne 0) { git commit --quiet --amend --no-edit }
+}
+
 function Push-Dados {
     # 3 tentativas; se nao der, o commit fica local e sobe na proxima execucao
     for ($i = 1; $i -le 3; $i++) {
         git push --quiet 2>&1 | ForEach-Object { Log "  git push: $_" }
         if ($LASTEXITCODE -eq 0) { return $true }
         Log "git push falhou (tentativa $i)"
-        if ($i -lt 3) { Start-Sleep -Seconds 60 }
+        if ($i -lt 3) { Start-Sleep -Seconds 60; Sincroniza }
     }
     return $false
 }
 
-Log "inicio (max=$Max, minutes=$Minutes, only='$Only')"
+Log "inicio (max=$Max, minutes=$Minutes, only='$Only', antigas=$Antigas)"
 
-git pull --rebase --quiet 2>&1 | ForEach-Object { Log "  git pull: $_" }
-if ($LASTEXITCODE -ne 0) { Log "git pull falhou"; exit 1 }
+# -X theirs + --merge-remote: um commit pendente (push falhou) nao conflita com o do outro PC
+git pull --rebase -X theirs --quiet 2>&1 | ForEach-Object { Log "  git pull: $_" }
+if ($LASTEXITCODE -ne 0) { git rebase --abort 2>$null; Log "git pull falhou"; exit 1 }
+& python -u scripts\build_data.py --merge-remote 2>&1 | ForEach-Object { Log $_ }
+git add docs/data
+git diff --cached --quiet
+if ($LASTEXITCODE -ne 0) { git commit --quiet -m "dados: junta state.json do remoto" }
 
 # commit de uma execucao anterior que nao conseguiu subir? publica logo, antes das 5h de scraping
 git rev-list --count "@{u}..HEAD" 2>$null | ForEach-Object { $pendentes = [int]$_ }
@@ -83,6 +102,7 @@ if (-not $NoPush -and $pendentes -gt 0) {
 
 $pyArgs = @("-u", "scripts\build_data.py", "--max", $Max, "--minutes", $Minutes)
 if ($Only) { $pyArgs += "--only"; $pyArgs += $Only.Split(" ") }
+if ($Antigas) { $pyArgs += "--antigas" }
 & python @pyArgs 2>&1 | ForEach-Object { Log $_ }
 if ($LASTEXITCODE -ne 0) { Log "build_data.py falhou (exit $LASTEXITCODE)"; exit 1 }
 
