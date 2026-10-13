@@ -85,6 +85,16 @@ function Push-Dados {
 
 Log "inicio (max=$Max, minutes=$Minutes, only='$Only', antigas=$Antigas)"
 
+# os dados sempre vao para a main: se o repo ficou em outra branch, volta (so se nao houver alteracoes)
+$branch = git rev-parse --abbrev-ref HEAD
+if ($branch -ne "main") {
+    git diff --quiet HEAD 2>$null
+    if ($LASTEXITCODE -ne 0) { Log "na branch '$branch' com alteracoes nao commitadas; pulando"; exit 1 }
+    git switch --quiet main 2>&1 | ForEach-Object { Log "  git switch: $_" }
+    if ($LASTEXITCODE -ne 0) { Log "nao conseguiu trocar '$branch' -> main"; exit 1 }
+    Log "trocou da branch '$branch' para main"
+}
+
 # -X theirs + --merge-remote: um commit pendente (push falhou) nao conflita com o do outro PC
 git pull --rebase -X theirs --quiet 2>&1 | ForEach-Object { Log "  git pull: $_" }
 if ($LASTEXITCODE -ne 0) { git rebase --abort 2>$null; Log "git pull falhou"; exit 1 }
