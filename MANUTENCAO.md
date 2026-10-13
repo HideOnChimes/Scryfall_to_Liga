@@ -5,7 +5,7 @@ Notas para quem mantém o site. Para usar o conversor, veja o [README](README.md
 ## Como funciona
 
 - `docs/` é o site publicado no GitHub Pages.
-  - `conv.js` tem a lógica de conversão (é a porta do `conv.py`, que fica na raiz deste repositório e continua funcionando como conversor de linha de comando; ele também importa para o banco da plataforma com `--db`, cujo schema está no repositório `estoque`).
+  - `conv.js` tem a lógica de conversão (é a porta do `conv.py`, que fica na raiz deste repositório e continua funcionando como conversor de linha de comando; ele também importa para o banco da plataforma com `--db`, cujo schema está no repositório [TCG_Data_Base](https://github.com/HideOnChimes/TCG_Data_Base)).
   - `formats.js` detecta o formato de entrada e gera as saídas para os outros apps (inclusive LigaMagic → ManaBox).
   - `app.js` cuida da interface, do lote de arquivos e do Google Drive.
   - `i18n.js` tem os textos do site em português, inglês e espanhol.
