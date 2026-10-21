@@ -641,7 +641,7 @@ def db_import(dbname, source, matched, liga, replace=False, schema=None):
             if lang not in langs:
                 sys.exit(f"Idioma '{lang}' nao existe na tabela language ({r.get('Name')})")
             qty = int(r.get("Quantity") or 1)
-            price = r.get("Purchase price") or None
+            price = 0  # custo comeca em 0: o "Purchase price" do ManaBox e preco de mercado
             cur_ = r.get("Purchase price currency") or "BRL"
             codes = db_extras(r, scry, hit, extras_tbl, liga)
             key = ",".join(codes)
