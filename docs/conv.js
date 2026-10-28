@@ -63,6 +63,15 @@ function colorFromScry(scry) {
 }
 
 // ---------------------------------------------------------------- liga
+// edicoes da Liga que o Scryfall guarda no set "sld" (ver Liga.candidates)
+const SECRET_LAIR = /^secret lair (drop series|commander)\b/i;
+// sigla da Liga com idioma no fim (sld222en, sld222jp): 1 se nao bate com o idioma da carta
+const langMismatch = (acr, lang) => {
+  const m = /^sld\d+(en|jp)$/i.exec(acr || "");
+  if (!m) return 0;
+  return (m[1].toLowerCase() === "jp" ? "ja" : "en") !== (lang || "en") ? 1 : 0;
+};
+
 export class Liga {
   constructor(eds, loadJSON) {
     this.eds = eds;
@@ -137,12 +146,17 @@ export class Liga {
     const e = this.byName.get(norm(scry.set_name));
     if (e) bases.push(e.acronym.toLowerCase());
     const out = [], seen = new Set();
-    for (const b of bases) for (const g of this.group(b)) if (!seen.has(g.id)) { seen.add(g.id); out.push(g); }
+    const add = (g) => { if (!seen.has(g.id)) { seen.add(g.id); out.push(g); } };
+    for (const b of bases) for (const g of this.group(b)) add(g);
+    // Secret Lair: o Scryfall junta tudo em "sld" (drops, Commander decks, Countdown Kit, promos),
+    // a Liga separa por drop (sld412, sldex01, sld222jp...) e os decks ficam em slc79, slc412, hfslc...
+    if (s === "sld") for (const e of this.eds) if (SECRET_LAIR.test(e.nameen || e.name || "")) add(e);
     return out;
   }
 
   async search(cands, scry, num, numClean) {
     const byNum = [], byName = [];
+    await Promise.all(cands.map((e) => this.cards(e))); // baixa em paralelo (sld tem 450 edicoes)
     for (const e of cands) {
       for (const c of await this.cards(e)) {
         if (!namesMatch(c.nEN, scry)) continue;
@@ -167,7 +181,7 @@ export class Liga {
         [byNum, byName] = await this.search(extra, scry, num, numClean);
       }
     }
-    const hits = this.rank(byNum.length ? byNum : byName, foil, num);
+    const hits = this.rank(byNum.length ? byNum : byName, foil, num, scry.lang);
     const missing = cands.filter((e) => !e.s).map((e) => e.acronym);
     if (!hits.length) return { hit: null, cands, note: "nao encontrada", missing };
     if (byNum.length) return { hit: hits[0], cands, note: "", missing };
@@ -177,12 +191,13 @@ export class Liga {
       note: eds.size > 1 ? "numero diferente, mais de uma edicao possivel" : "numero da Liga difere do Scryfall" };
   }
 
-  rank(hits, foil, num) {
+  rank(hits, foil, num, lang = "en") {
     if (hits.length > 1) {
-      // prefere flag foil compativel, depois numero exato, depois set principal
+      // prefere flag foil compativel, depois numero exato, depois idioma da edicao (Secret Lair
+      // sld222en / sld222jp tem o mesmo numero), depois set principal
       const key = (h) => [((h[1].pF || 0) !== (foil ? 1 : 0)) | 0, (normNum(h[1].sN) !== num) | 0,
-        (h[0].idgrouped !== "0") | 0];
-      hits.sort((a, b) => { const ka = key(a), kb = key(b); return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2]; });
+        langMismatch(h[0].acronym, lang) | 0, (h[0].idgrouped !== "0") | 0];
+      hits.sort((a, b) => { const ka = key(a), kb = key(b); return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2] || ka[3] - kb[3]; });
     }
     return hits;
   }
@@ -207,7 +222,7 @@ export class Liga {
       for (const cands of [promoEds, group]) {
         if (!cands.length) continue;
         const [byNum, byName] = await this.search(cands, alt, num, num);
-        const hits = this.rank(byNum.length ? byNum : byName, foil, num);
+        const hits = this.rank(byNum.length ? byNum : byName, foil, num, scry.lang);
         if (hits.length) return { hit: hits[0], cands, note: "", missing: [] };
       }
     }

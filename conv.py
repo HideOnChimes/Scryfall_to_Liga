@@ -256,6 +256,18 @@ def names_match(liga_name, scry):
     return False
 
 
+# edicoes da Liga que o Scryfall guarda no set "sld" (ver Liga.candidates)
+SECRET_LAIR = re.compile(r"^secret lair (drop series|commander)\b", re.I)
+
+
+def lang_mismatch(acr, lang):
+    """sigla da Liga com idioma no fim (sld222en, sld222jp): True se nao bate com o idioma da carta"""
+    m = re.match(r"^sld\d+(en|jp)$", acr or "", re.I)
+    if not m:
+        return False
+    return ("ja" if m.group(1).lower() == "jp" else "en") != (lang or "en")
+
+
 class Liga:
     def __init__(self, refresh=False):
         self.eds = liga_editions(refresh)
@@ -319,11 +331,21 @@ class Liga:
         if e:
             bases.append(e["acronym"].lower())
         out, seen = [], set()
+
+        def add(e):
+            if e["id"] not in seen:
+                seen.add(e["id"])
+                out.append(e)
+
         for b in bases:
             for e in self.group(b):
-                if e["id"] not in seen:
-                    seen.add(e["id"])
-                    out.append(e)
+                add(e)
+        # Secret Lair: o Scryfall junta tudo em "sld" (drops, Commander decks, Countdown Kit, promos),
+        # a Liga separa por drop (sld412, sldex01, sld222jp...) e os decks ficam em slc79, slc412, hfslc...
+        if s == "sld":
+            for e in self.eds:
+                if SECRET_LAIR.match(e.get("nameen") or e.get("name") or ""):
+                    add(e)
         return out
 
     def _search(self, cands, scry, num, num_clean):
@@ -348,7 +370,7 @@ class Liga:
             if extra:
                 cands += extra
                 by_num, by_name = self._search(extra, scry, num, num_clean)
-        hits = self._rank(by_num or by_name, foil, num)
+        hits = self._rank(by_num or by_name, foil, num, scry.get("lang"))
         if not hits:
             return None, cands, "nao encontrada"
         if by_num:
@@ -361,11 +383,13 @@ class Liga:
 
 
     @staticmethod
-    def _rank(hits, foil, num):
+    def _rank(hits, foil, num, lang="en"):
         if len(hits) > 1:
-            # prefere entrada com flag foil compativel, depois numero exato, depois set principal
+            # prefere entrada com flag foil compativel, depois numero exato, depois idioma da edicao
+            # (Secret Lair sld222en / sld222jp tem o mesmo numero), depois set principal
             hits.sort(key=lambda h: ((h[1].get("pF") or 0) != (1 if foil else 0),
                                      norm_num(h[1]["sN"]) != num,
+                                     lang_mismatch(h[0]["acronym"], lang),
                                      h[0].get("idgrouped") != "0"))
         return hits
 
@@ -396,7 +420,7 @@ class Liga:
                 if not cands:
                     continue
                 by_num, by_name = self._search(cands, alt, num, num)
-                hits = self._rank(by_num or by_name, foil, num)
+                hits = self._rank(by_num or by_name, foil, num, scry.get("lang"))
                 if hits:
                     return hits[0], cands, ""
         return None
