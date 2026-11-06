@@ -22,11 +22,16 @@ const PROMO_TYPES = new Set(["prerelease", "promopack", "playpromo", "datestampe
 // numero do Scryfall que aponta o set de origem ("APC-105" em The List)
 const ORIGIN_NUM = /^([a-z0-9]{2,6})-([a-z0-9]+)$/i;
 
-// Avisos na coluna Comentario tem dois pesos: "VERIFICAR:" (carta nao encontrada ou edicao em duvida,
-// precisa conferir) e "Obs:" (carta encontrada, so uma observacao, ex.: numero da Liga difere).
+// Avisos na coluna Comentario tem tres pesos: "VERIFICAR:" (carta nao encontrada ou edicao em duvida,
+// precisa conferir), "Obs: edicao trocada, ..." (carta encontrada, mas noutra edicao, ex.: The List ->
+// set de origem) e "Obs:" (carta encontrada, so uma observacao, ex.: numero da Liga difere).
 export function noteLevel(note) {
   if (!note) return "";
-  return /^verificar\b/i.test(note.trim()) ? "warn" : "info";
+  const n = note.trim();
+  if (/^verificar\b/i.test(n)) return "warn";
+  // "nao tem essa carta na Liga, usada X" e o texto antigo do mesmo caso (CSVs ja gerados)
+  if (/^obs\b/i.test(n) && /edicao trocada|nao tem essa carta na liga/i.test(n)) return "set";
+  return "info";
 }
 
 // ---------------------------------------------------------------- texto
@@ -513,7 +518,7 @@ async function convertScry(liga, scry, { qty, quality, lang, foil, scryfall }) {
     // veio do set de origem: a Liga nao tem essa carta em "The List"; e a mesma carta, so muda a edicao
     if (origin) {
       const via = `${scry.set_name} nao tem essa carta na Liga, usada ${origin.set_name} #${origin.collector_number}`;
-      comment = note && !light ? `VERIFICAR: ${note}; ${via} (${ref})` : `Obs: ${via} (${ref})`;
+      comment = note && !light ? `VERIFICAR: ${note}; ${via} (${ref})` : `Obs: edicao trocada, ${via} (${ref})`;
     }
     return emit(rowFromHit(hit[0], hit[1], scry), qty, quality, lang, extras, comment);
   }

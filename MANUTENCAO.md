@@ -29,12 +29,13 @@ Quando uma carta cai numa edição ainda não indexada, o site marca a linha com
 
 ### Avisos: `VERIFICAR` e `Obs`
 
-A coluna Comentario tem dois pesos, que `noteLevel()` em `conv.js` distingue pelo prefixo:
+A coluna Comentario tem três pesos, que `noteLevel()` em `conv.js` distingue pelo prefixo:
 
-- `VERIFICAR:` (nível `warn`): carta não encontrada, edição ainda não indexada, edição em dúvida (mais de uma possível, ou não informada). Conta como "para conferir" e pinta a linha de amarelo.
-- `Obs:` (nível `info`): a carta foi encontrada na edição certa, só sobrou uma observação: o número da Liga difere do Scryfall (normal em sets antigos e no The List, que a Liga numera do próprio jeito), ou o número pedido não existe no Scryfall e foi usada a impressão por nome. Não pinta a linha; só o texto do aviso fica discreto.
+- `VERIFICAR:` (nível `warn`): carta não encontrada, edição ainda não indexada, edição em dúvida (mais de uma possível, ou não informada). Conta como "para conferir" e pinta a linha de vermelho.
+- `Obs: edicao trocada, ...` (nível `set`): a carta foi encontrada, mas noutra edição (The List → set de origem). Linha amarela, botão **Só edição trocada**.
+- `Obs:` (nível `info`): a carta foi encontrada na edição certa, só sobrou um aviso leve: o número da Liga difere do Scryfall (normal em sets antigos e no The List, que a Liga numera do próprio jeito), ou o número pedido não existe no Scryfall e foi usada a impressão por nome. Não pinta a linha; só o texto do aviso fica discreto.
 
-Com qualquer aviso aparecem, além de **Baixar** (arquivo inteiro), os botões **Baixar sem avisos** (só linhas limpas), **Só observações** e **Só erros**, cada um gerando o mesmo formato com só aquelas linhas (`download(it, only)` em `app.js`).
+Com qualquer aviso aparecem, além de **Baixar** (arquivo inteiro), os botões **Baixar sem avisos** (só linhas limpas), **Só avisos**, **Só edição trocada** e **Só erros**, cada um gerando o mesmo formato com só aquelas linhas (`download(it, only)` em `app.js`).
 
 ### LigaMagic → outros apps: edições que a Liga agrupa
 
@@ -47,7 +48,7 @@ No sentido inverso (`formats.js`, `rescue()`), quando a carta vinda da Liga não
 
 ### The List (`plst`)
 
-O Scryfall numera The List como `APC-105` (sigla do set de origem + número de lá). A Liga tem a edição "The List" (`plist`) com numeração própria e só parte das cartas. A busca normal acha pelo nome (sem aviso de número, já que nunca bate). Quando a carta não está lá, `findViaOrigin` pede ao Scryfall a impressão do set de origem (`/cards/collection` com `{set: "apc", collector_number: "105"}`) e procura essa na Liga (Apocalypse #105), marcando `Obs: The List nao tem essa carta na Liga, usada Apocalypse #105`. Vale para qualquer set cujo número tenha o formato `SIGLA-NUMERO` com sigla conhecida pelo Scryfall.
+O Scryfall numera The List como `APC-105` (sigla do set de origem + número de lá). A Liga tem a edição "The List" (`plist`) com numeração própria e só parte das cartas. A busca normal acha pelo nome (sem aviso de número, já que nunca bate). Quando a carta não está lá, `findViaOrigin` pede ao Scryfall a impressão do set de origem (`/cards/collection` com `{set: "apc", collector_number: "105"}`) e procura essa na Liga (Apocalypse #105), marcando `Obs: edicao trocada, The List nao tem essa carta na Liga, usada Apocalypse #105`. Vale para qualquer set cujo número tenha o formato `SIGLA-NUMERO` com sigla conhecida pelo Scryfall.
 
 Promos que o Scryfall agrupa num set genérico (`pw25` "Wizards Play Network 2025", `plst` "The List"...) a Liga guarda na edição "(Promo)" do set de origem. Quando a busca normal falha, o conversor pede ao Scryfall as outras impressões da carta (`/cards/search?q=oracleid:...&unique=prints`), pega a de data de lançamento mais próxima e procura no grupo dela, primeiro nas edições "(Promo)" e depois no set principal (ex.: Gran-Gran `pw25` #14 → `prtla` #1).
 

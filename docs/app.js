@@ -69,16 +69,17 @@ $("from").addEventListener("change", syncFormats);
 // ---------------------------------------------------------------- lista de arquivos
 const STATUS = { fila: "file.queued", rodando: "file.running", ok: "file.ok" };
 
-// avisos por peso: warn = "VERIFICAR" (precisa conferir), info = "Obs" (carta encontrada, so observacao)
+// avisos por peso: warn = "VERIFICAR" (precisa conferir, vermelho), set = edicao trocada (amarelo),
+// info = "Obs" (carta encontrada, so observacao, discreto)
 function counts(result) {
-  const c = { warn: 0, info: 0 };
+  const c = { warn: 0, set: 0, info: 0 };
   for (const n of result.notes) { const l = noteLevel(n); if (l) c[l]++; }
   return c;
 }
-const fileStatus = (it) => (counts(it.result).warn ? "warn" : "ok");
+const fileStatus = (it) => { const c = counts(it.result); return c.warn ? "warn" : c.set ? "set" : "ok"; };
 function fileText(it) {
   const c = counts(it.result);
-  return c.warn ? t("file.warn", c.warn) : c.info ? t("file.info", c.info) : t("file.ok");
+  return c.warn ? t("file.warn", c.warn) : c.set ? t("file.set", c.set) : c.info ? t("file.info", c.info) : t("file.ok");
 }
 
 function renderFiles() {
@@ -310,18 +311,19 @@ $("which").addEventListener("change", () => show(items.filter((it) => it.result)
 function summarize() {
   const result = shown.result;
   const { rows } = result;
-  const { warn, info } = counts(result);
+  const { warn, set, info } = counts(result);
   const qty = result.to === "liga" ? rows.reduce((s, r) => s + (parseInt(r[5], 10) || 0), 0) : null;
-  $("summary").textContent = t("result.summary", fmtLabel(result.from), fmtLabel(result.to), rows.length, qty, warn, info);
-  shown.status = warn ? "warn" : "ok";
-  // com avisos, da para baixar separado: so as linhas limpas, so as observacoes, so os erros
-  const clean = $("downloadClean"), infoBtn = $("downloadInfo"), warnBtn = $("downloadWarn");
-  clean.hidden = !(warn || info);
-  clean.textContent = t("result.downloadClean", rows.length - warn - info);
-  infoBtn.hidden = !info;
-  infoBtn.textContent = t("result.downloadInfo", info);
-  warnBtn.hidden = !warn;
-  warnBtn.textContent = t("result.downloadWarn", warn);
+  $("summary").textContent = t("result.summary", fmtLabel(result.from), fmtLabel(result.to), rows.length, qty, warn, set, info);
+  shown.status = fileStatus(shown);
+  // com avisos, da para baixar separado: so as linhas limpas, so as observacoes, so edicao trocada, so os erros
+  const clean = $("downloadClean");
+  clean.hidden = !(warn || set || info);
+  clean.textContent = t("result.downloadClean", rows.length - warn - set - info);
+  for (const [id, n] of [["downloadInfo", info], ["downloadSet", set], ["downloadWarn", warn]]) {
+    const b = $(id);
+    b.hidden = !n;
+    b.textContent = t(`result.${id}`, n);
+  }
 }
 
 function show(it) {
@@ -462,7 +464,8 @@ function save(blob, name) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-// only: "" = arquivo inteiro; "clean" = so linhas sem aviso; "info" = so as "Obs"; "warn" = so as "VERIFICAR"
+// only: "" = arquivo inteiro; "clean" = so linhas sem aviso; "info" = so as "Obs"; "set" = so edicao trocada;
+// "warn" = so as "VERIFICAR"
 function download(it, only = "") {
   const type = it.result.ext === "txt" ? "text/plain" : "text/csv";
   let result = it.result, name = outName(it);
@@ -477,6 +480,7 @@ function download(it, only = "") {
 $("download").addEventListener("click", () => shown && download(shown));
 $("downloadClean").addEventListener("click", () => shown && download(shown, "clean"));
 $("downloadInfo").addEventListener("click", () => shown && download(shown, "info"));
+$("downloadSet").addEventListener("click", () => shown && download(shown, "set"));
 $("downloadWarn").addEventListener("click", () => shown && download(shown, "warn"));
 $("zip").addEventListener("click", () => {
   const used = new Map();
