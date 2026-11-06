@@ -31,8 +31,10 @@ Quando uma carta cai numa edição ainda não indexada, o site marca a linha com
 
 A coluna Comentario tem dois pesos, que `noteLevel()` em `conv.js` distingue pelo prefixo:
 
-- `VERIFICAR:` (nível `warn`): carta não encontrada, edição ainda não indexada, edição em dúvida (mais de uma possível, ou não informada). Conta como "para conferir", pinta a linha de amarelo e habilita o botão **Baixar sem erros**, que gera o arquivo sem essas linhas.
-- `Obs:` (nível `info`): a carta foi encontrada na edição certa, só sobrou uma observação: o número da Liga difere do Scryfall (normal em sets antigos e no The List, que a Liga numera do próprio jeito), ou o número pedido não existe no Scryfall e foi usada a impressão por nome. Não pinta a linha; só o texto do aviso fica discreto. Entra no arquivo dos dois botões.
+- `VERIFICAR:` (nível `warn`): carta não encontrada, edição ainda não indexada, edição em dúvida (mais de uma possível, ou não informada). Conta como "para conferir" e pinta a linha de amarelo.
+- `Obs:` (nível `info`): a carta foi encontrada na edição certa, só sobrou uma observação: o número da Liga difere do Scryfall (normal em sets antigos e no The List, que a Liga numera do próprio jeito), ou o número pedido não existe no Scryfall e foi usada a impressão por nome. Não pinta a linha; só o texto do aviso fica discreto.
+
+Com qualquer aviso aparecem, além de **Baixar** (arquivo inteiro), os botões **Baixar sem avisos** (só linhas limpas), **Só observações** e **Só erros**, cada um gerando o mesmo formato com só aquelas linhas (`download(it, only)` em `app.js`).
 
 ### LigaMagic → outros apps: edições que a Liga agrupa
 
