@@ -33,8 +33,12 @@ const STRINGS = {
     "result.summary": (from, to, lines, cards, warn, info) => `${from} → ${to}: ${plural(lines, "linha", "linhas")}` +
       (cards != null ? ` (${plural(cards, "carta", "cartas")})` : "") + (warn ? ` · ${warn} para conferir` : "") +
       (info ? ` · ${plural(info, "observação", "observações")}` : "") + (warn || info ? "" : " · tudo certo"),
-    "result.downloadClean": (n) => `Baixar sem erros (${plural(n, "linha", "linhas")})`,
-    "result.cleanSuffix": "sem erros",
+    "result.downloadClean": (n) => `Baixar sem avisos (${plural(n, "linha", "linhas")})`,
+    "result.downloadInfo": (n) => `Só observações (${plural(n, "linha", "linhas")})`,
+    "result.downloadWarn": (n) => `Só erros (${plural(n, "linha", "linhas")})`,
+    "result.cleanSuffix": "sem avisos",
+    "result.infoSuffix": "observacoes",
+    "result.warnSuffix": "erros",
     "col.code": "Sigla", "col.cardEn": "Carta (EN)", "col.cardPt": "Carta (PT)", "col.qty": "Qtd", "col.cond": "Qual.",
     "col.lang": "Idioma", "col.rarity": "Rar.", "col.color": "Cor", "col.extras": "Extras", "col.note": "Aviso",
     "file.queued": "Na fila",
@@ -71,7 +75,7 @@ const STRINGS = {
     "help.steps": `<li>Exporte a coleção em CSV do seu app (LigaMagic, ManaBox, Moxfield, Deckbox, Dragon Shield, TCGplayer…) ou de uma busca do Scryfall. Ou monte uma lista de texto, uma carta por linha.</li>
       <li>Selecione um ou vários arquivos (do computador ou do Google Drive). O formato de origem de cada um é detectado sozinho.</li>
       <li>Escolha o formato de destino e clique em <strong>Converter</strong>.</li>
-      <li>Confira as linhas marcadas com <span class="tag">VERIFICAR</span> (carta não encontrada ou edição em dúvida). As marcadas com <em>Obs</em> foram encontradas; é só uma observação (ex.: a Liga numera a edição de outro jeito). Dá para editar a tabela antes de baixar os arquivos, um a um ou todos num .zip. Com linhas para conferir, também dá para baixar só as que não têm erro.</li>
+      <li>Confira as linhas marcadas com <span class="tag">VERIFICAR</span> (carta não encontrada ou edição em dúvida). As marcadas com <em>Obs</em> foram encontradas; é só uma observação (ex.: a Liga numera a edição de outro jeito). Dá para editar a tabela antes de baixar os arquivos, um a um ou todos num .zip. Com avisos, também dá para baixar separado: só as linhas sem aviso, só as observações ou só os erros.</li>
       <li>Importe no app de destino. Na LigaMagic: <em>Minha Coleção → Importar</em>.</li>`,
     "help.csvTitle": "CSVs aceitos",
     "help.csvText": `O site reconhece as colunas automaticamente, inclusive em planilhas com cabeçalho em português e separadas por <code>;</code>.
@@ -122,8 +126,12 @@ const STRINGS = {
     "result.summary": (from, to, lines, cards, warn, info) => `${from} → ${to}: ${plural(lines, "row", "rows")}` +
       (cards != null ? ` (${plural(cards, "card", "cards")})` : "") + (warn ? ` · ${warn} to review` : "") +
       (info ? ` · ${plural(info, "note", "notes")}` : "") + (warn || info ? "" : " · all good"),
-    "result.downloadClean": (n) => `Download without errors (${plural(n, "row", "rows")})`,
-    "result.cleanSuffix": "no errors",
+    "result.downloadClean": (n) => `Download without notes (${plural(n, "row", "rows")})`,
+    "result.downloadInfo": (n) => `Notes only (${plural(n, "row", "rows")})`,
+    "result.downloadWarn": (n) => `Errors only (${plural(n, "row", "rows")})`,
+    "result.cleanSuffix": "no notes",
+    "result.infoSuffix": "notes",
+    "result.warnSuffix": "errors",
     "col.code": "Set", "col.cardEn": "Card (EN)", "col.cardPt": "Card (PT)", "col.qty": "Qty", "col.cond": "Cond.",
     "col.lang": "Lang.", "col.rarity": "Rar.", "col.color": "Color", "col.extras": "Extras", "col.note": "Warning",
     "file.queued": "Queued",
@@ -160,7 +168,7 @@ const STRINGS = {
     "help.steps": `<li>Export your collection as CSV from your app (LigaMagic, ManaBox, Moxfield, Deckbox, Dragon Shield, TCGplayer…) or from a Scryfall search. Or write a text list, one card per line.</li>
       <li>Choose one or more files (from your computer or Google Drive). Each file's source format is detected automatically.</li>
       <li>Pick the target format and click <strong>Convert</strong>.</li>
-      <li>Review the rows marked <span class="tag">VERIFICAR</span> (card not found or set in doubt). Rows marked <em>Obs</em> were found; it is just a note (e.g. LigaMagic numbers the set differently). You can edit the table before downloading the files, one by one or all in a .zip. When there are rows to review, you can also download only the rows without errors.</li>
+      <li>Review the rows marked <span class="tag">VERIFICAR</span> (card not found or set in doubt). Rows marked <em>Obs</em> were found; it is just a note (e.g. LigaMagic numbers the set differently). You can edit the table before downloading the files, one by one or all in a .zip. When there are notes, you can also download them apart: only the rows without notes, only the notes or only the errors.</li>
       <li>Import into the target app. On LigaMagic: <em>Minha Coleção → Importar</em>.</li>`,
     "help.csvTitle": "Supported CSVs",
     "help.csvText": `Columns are recognized automatically, including spreadsheets with Portuguese headers or separated by <code>;</code>.
@@ -211,8 +219,12 @@ const STRINGS = {
     "result.summary": (from, to, lines, cards, warn, info) => `${from} → ${to}: ${plural(lines, "fila", "filas")}` +
       (cards != null ? ` (${plural(cards, "carta", "cartas")})` : "") + (warn ? ` · ${warn} para revisar` : "") +
       (info ? ` · ${plural(info, "observación", "observaciones")}` : "") + (warn || info ? "" : " · todo bien"),
-    "result.downloadClean": (n) => `Descargar sin errores (${plural(n, "fila", "filas")})`,
-    "result.cleanSuffix": "sin errores",
+    "result.downloadClean": (n) => `Descargar sin avisos (${plural(n, "fila", "filas")})`,
+    "result.downloadInfo": (n) => `Solo observaciones (${plural(n, "fila", "filas")})`,
+    "result.downloadWarn": (n) => `Solo errores (${plural(n, "fila", "filas")})`,
+    "result.cleanSuffix": "sin avisos",
+    "result.infoSuffix": "observaciones",
+    "result.warnSuffix": "errores",
     "col.code": "Sigla", "col.cardEn": "Carta (EN)", "col.cardPt": "Carta (PT)", "col.qty": "Cant.", "col.cond": "Estado",
     "col.lang": "Idioma", "col.rarity": "Rar.", "col.color": "Color", "col.extras": "Extras", "col.note": "Aviso",
     "file.queued": "En cola",
@@ -249,7 +261,7 @@ const STRINGS = {
     "help.steps": `<li>Exporta tu colección en CSV desde tu app (LigaMagic, ManaBox, Moxfield, Deckbox, Dragon Shield, TCGplayer…) o desde una búsqueda de Scryfall. O escribe una lista de texto, una carta por línea.</li>
       <li>Elige uno o varios archivos (desde tu computadora o Google Drive). El formato de origen de cada uno se detecta solo.</li>
       <li>Elige el formato de destino y haz clic en <strong>Convertir</strong>.</li>
-      <li>Revisa las filas marcadas con <span class="tag">VERIFICAR</span> (carta no encontrada o edición en duda). Las marcadas con <em>Obs</em> fueron encontradas; es solo una observación (ej.: LigaMagic numera la edición de otra forma). Puedes editar la tabla antes de descargar los archivos, uno por uno o todos en un .zip. Si hay filas para revisar, también puedes descargar solo las que no tienen errores.</li>
+      <li>Revisa las filas marcadas con <span class="tag">VERIFICAR</span> (carta no encontrada o edición en duda). Las marcadas con <em>Obs</em> fueron encontradas; es solo una observación (ej.: LigaMagic numera la edición de otra forma). Puedes editar la tabla antes de descargar los archivos, uno por uno o todos en un .zip. Si hay avisos, también puedes descargar por separado: solo las filas sin aviso, solo las observaciones o solo los errores.</li>
       <li>Importa en la app de destino. En LigaMagic: <em>Minha Coleção → Importar</em>.</li>`,
     "help.csvTitle": "CSVs aceptados",
     "help.csvText": `Las columnas se reconocen automáticamente, incluso en hojas con encabezados en portugués o separadas por <code>;</code>.

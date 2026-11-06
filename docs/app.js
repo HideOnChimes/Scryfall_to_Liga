@@ -314,10 +314,14 @@ function summarize() {
   const qty = result.to === "liga" ? rows.reduce((s, r) => s + (parseInt(r[5], 10) || 0), 0) : null;
   $("summary").textContent = t("result.summary", fmtLabel(result.from), fmtLabel(result.to), rows.length, qty, warn, info);
   shown.status = warn ? "warn" : "ok";
-  // com linhas para conferir, da para baixar tambem so as que nao tem erro
-  const clean = $("downloadClean");
-  clean.hidden = !warn;
-  clean.textContent = t("result.downloadClean", rows.length - warn);
+  // com avisos, da para baixar separado: so as linhas limpas, so as observacoes, so os erros
+  const clean = $("downloadClean"), infoBtn = $("downloadInfo"), warnBtn = $("downloadWarn");
+  clean.hidden = !(warn || info);
+  clean.textContent = t("result.downloadClean", rows.length - warn - info);
+  infoBtn.hidden = !info;
+  infoBtn.textContent = t("result.downloadInfo", info);
+  warnBtn.hidden = !warn;
+  warnBtn.textContent = t("result.downloadWarn", warn);
 }
 
 function show(it) {
@@ -458,20 +462,22 @@ function save(blob, name) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-// clean = sem as linhas marcadas VERIFICAR (as "Obs" ficam: a carta foi encontrada)
-function download(it, clean = false) {
+// only: "" = arquivo inteiro; "clean" = so linhas sem aviso; "info" = so as "Obs"; "warn" = so as "VERIFICAR"
+function download(it, only = "") {
   const type = it.result.ext === "txt" ? "text/plain" : "text/csv";
   let result = it.result, name = outName(it);
-  if (clean) {
-    const keep = result.rows.map((_, i) => noteLevel(result.notes[i]) !== "warn");
+  if (only) {
+    const keep = result.rows.map((_, i) => (noteLevel(result.notes[i]) || "clean") === only);
     result = { ...result, rows: result.rows.filter((_, i) => keep[i]), notes: result.notes.filter((_, i) => keep[i]) };
-    name = name.replace(/(\.[^.]+)$/, ` (${t("result.cleanSuffix")})$1`);
+    name = name.replace(/(\.[^.]+)$/, ` (${t(`result.${only}Suffix`)})$1`);
   }
   save(new Blob([serialize(result)], { type: `${type};charset=utf-8` }), name);
 }
 
 $("download").addEventListener("click", () => shown && download(shown));
-$("downloadClean").addEventListener("click", () => shown && download(shown, true));
+$("downloadClean").addEventListener("click", () => shown && download(shown, "clean"));
+$("downloadInfo").addEventListener("click", () => shown && download(shown, "info"));
+$("downloadWarn").addEventListener("click", () => shown && download(shown, "warn"));
 $("zip").addEventListener("click", () => {
   const used = new Map();
   const files = items.filter((it) => it.result).map((it) => {
