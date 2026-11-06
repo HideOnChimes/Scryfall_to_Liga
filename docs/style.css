@@ -110,6 +110,8 @@ td.enum select option { background: var(--surface); color: var(--text); }
 .add-row { margin-top: 10px; padding: 8px 14px; font-size: .9rem; }
 
 .tag { background: var(--warn-bg); color: var(--warn-text); padding: 1px 6px; border-radius: 4px; font-size: .85em; font-weight: 600; }
+.tag.set { background: var(--set-bg); color: var(--set-text); }
+.help ol > li > ul { margin: 4px 0 6px; }
 pre {
   background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
   padding: 12px; overflow-x: auto; font-size: .85rem;
