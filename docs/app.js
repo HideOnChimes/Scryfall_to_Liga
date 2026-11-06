@@ -1,4 +1,4 @@
-import { Liga, scryfallClient } from "./conv.js";
+import { Liga, scryfallClient, noteLevel } from "./conv.js";
 import { SOURCES, TARGETS, ENUMS, label, detectFormat, convert, serialize } from "./formats.js";
 import { makeZip } from "./zip.js";
 import { GOOGLE } from "./config.js";
@@ -69,6 +69,18 @@ $("from").addEventListener("change", syncFormats);
 // ---------------------------------------------------------------- lista de arquivos
 const STATUS = { fila: "file.queued", rodando: "file.running", ok: "file.ok" };
 
+// avisos por peso: warn = "VERIFICAR" (precisa conferir), info = "Obs" (carta encontrada, so observacao)
+function counts(result) {
+  const c = { warn: 0, info: 0 };
+  for (const n of result.notes) { const l = noteLevel(n); if (l) c[l]++; }
+  return c;
+}
+const fileStatus = (it) => (counts(it.result).warn ? "warn" : "ok");
+function fileText(it) {
+  const c = counts(it.result);
+  return c.warn ? t("file.warn", c.warn) : c.info ? t("file.info", c.info) : t("file.ok");
+}
+
 function renderFiles() {
   const ul = $("files");
   ul.replaceChildren();
@@ -78,7 +90,7 @@ function renderFiles() {
     const name = Object.assign(document.createElement("span"), { className: "fname", textContent: it.fullName });
     const fmt = Object.assign(document.createElement("span"), { className: "fmt", textContent: fmtLabel(fromOf(it)) });
     const st = Object.assign(document.createElement("span"), { className: `st ${it.status || ""}` });
-    st.textContent = it.status === "warn" ? t("file.warn", it.result.notes.filter(Boolean).length)
+    st.textContent = it.result ? fileText(it)
       : it.status === "err" ? t("file.err", errText(it.error)) : STATUS[it.status] ? t(STATUS[it.status]) : "";
     li.append(name, fmt, st);
     if (it.result) {
@@ -249,7 +261,7 @@ $("go").addEventListener("click", async () => {
     };
     try {
       it.result = await convert(it.text, { from: fromOf(it), to, liga, scryfall, onProgress });
-      it.status = it.result.notes.some(Boolean) ? "warn" : "ok";
+      it.status = fileStatus(it);
       if (!shown) show(it);
     } catch (e) {
       console.error(e);
@@ -297,11 +309,15 @@ $("which").addEventListener("change", () => show(items.filter((it) => it.result)
 
 function summarize() {
   const result = shown.result;
-  const { rows, notes } = result;
-  const warn = notes.filter(Boolean).length;
+  const { rows } = result;
+  const { warn, info } = counts(result);
   const qty = result.to === "liga" ? rows.reduce((s, r) => s + (parseInt(r[5], 10) || 0), 0) : null;
-  $("summary").textContent = t("result.summary", fmtLabel(result.from), fmtLabel(result.to), rows.length, qty, warn);
+  $("summary").textContent = t("result.summary", fmtLabel(result.from), fmtLabel(result.to), rows.length, qty, warn, info);
   shown.status = warn ? "warn" : "ok";
+  // com linhas para conferir, da para baixar tambem so as que nao tem erro
+  const clean = $("downloadClean");
+  clean.hidden = !warn;
+  clean.textContent = t("result.downloadClean", rows.length - warn);
 }
 
 function show(it) {
@@ -325,7 +341,7 @@ function show(it) {
     if (only && !notes[ri]) return;
     const tr = tb.insertRow();
     tr.dataset.ri = ri;
-    if (notes[ri]) tr.className = "warn";
+    tr.className = noteLevel(notes[ri]);
     for (const [, ci] of cols) {
       const td = tr.insertCell();
       const value = (ci === "note" ? notes[ri] : r[ci]) ?? "";
@@ -395,7 +411,7 @@ $("table").addEventListener("input", (e) => {
   if (c.ci !== "note") rows[c.ri][c.ci] = v;
   if (isNoteCol(shown.result, c.ci)) notes[c.ri] = v.trim();
   c.td.classList.toggle("edited", isEdited(shown.result, c.ri, c.ci));
-  c.td.parentElement.classList.toggle("warn", !!notes[c.ri]);
+  c.td.parentElement.className = noteLevel(notes[c.ri]);
   summarize();
 });
 
@@ -442,12 +458,20 @@ function save(blob, name) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-function download(it) {
+// clean = sem as linhas marcadas VERIFICAR (as "Obs" ficam: a carta foi encontrada)
+function download(it, clean = false) {
   const type = it.result.ext === "txt" ? "text/plain" : "text/csv";
-  save(new Blob([serialize(it.result)], { type: `${type};charset=utf-8` }), outName(it));
+  let result = it.result, name = outName(it);
+  if (clean) {
+    const keep = result.rows.map((_, i) => noteLevel(result.notes[i]) !== "warn");
+    result = { ...result, rows: result.rows.filter((_, i) => keep[i]), notes: result.notes.filter((_, i) => keep[i]) };
+    name = name.replace(/(\.[^.]+)$/, ` (${t("result.cleanSuffix")})$1`);
+  }
+  save(new Blob([serialize(result)], { type: `${type};charset=utf-8` }), name);
 }
 
 $("download").addEventListener("click", () => shown && download(shown));
+$("downloadClean").addEventListener("click", () => shown && download(shown, true));
 $("zip").addEventListener("click", () => {
   const used = new Map();
   const files = items.filter((it) => it.result).map((it) => {
