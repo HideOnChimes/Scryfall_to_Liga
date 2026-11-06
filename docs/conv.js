@@ -336,9 +336,10 @@ export function scryfallClient(fetchFn = fetch) {
       }
       return sets;
     },
-    // todas as impressoes de uma carta (para achar o set de origem de uma promo generica)
-    async prints(card) {
-      const q = card.oracle_id ? `oracleid:${card.oracle_id}` : `!"${card.name}"`;
+    // todas as impressoes de uma carta (para achar o set de origem de uma promo generica).
+    // extras: inclui o que a busca esconde por padrao (World Championship Decks, por exemplo)
+    async prints(card, { extras = false } = {}) {
+      const q = (card.oracle_id ? `oracleid:${card.oracle_id}` : `!"${card.name}"`) + (extras ? " include:extras" : "");
       const url = `${SCRY}/cards/search?${new URLSearchParams({ q, unique: "prints", order: "released" })}`;
       await pause(GAP);
       const r = await call(url, { headers: { Accept: "application/json" } });
