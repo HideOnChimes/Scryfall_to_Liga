@@ -106,6 +106,49 @@ function tries(r) {
   return out;
 }
 
+// Edicoes da Liga que juntam varios sets do Scryfall (World Championship Decks = wc97..wc04, Magic Player
+// Rewards = p01..p11, cada drop de Secret Lair = sld) ou cujo nome e so parte do nome no Scryfall
+// (Stellar Sights = "Edge of Eternities: Stellar Sights"): procura todas as impressoes da carta e escolhe
+// pela edicao + numero. Nos World Championship a Liga poe o deck no nome: "Phantom Nishoba-SB (BK-02)" =
+// sideboard do deck de Brian Kibler no Worlds 2002 = Scryfall wc02 #bk140sb.
+const WCD_NAME = /^(.*?)(-SB)?\s*\((\w{2})-(\d{2})\)\s*$/;
+async function rescue(r, { liga, scryfall }) {
+  const ed = liga?.byAcr.get((r.ligaSet || "").toLowerCase());
+  const edName = norm(ed?.nameen || ed?.name || r.setName || "");
+  if (!edName || !r.name) return null;
+  const m = WCD_NAME.exec(r.name);
+  const base = m ? m[1].trim() : r.name;
+  // "Mimir's Ancient Wisdom // Teferi's Ageless Insight": flavor name + nome real; o Scryfall acha pelo real
+  const names = [base, ...base.split(" // ").map((s) => s.trim())].filter((v, i, a) => v && a.indexOf(v) === i);
+  let prints = [];
+  for (const n of names) {
+    prints = await scryfall.prints({ name: n }, { extras: true });
+    if (prints.length) break;
+  }
+  const secretLair = edName.startsWith("secret lair");
+  const inEd = prints.filter((p) => {
+    if (secretLair) return p.set === "sld";
+    const sn = norm(p.set_name);
+    return sn === edName || sn.startsWith(edName + " ") || (" " + sn + " ").includes(" " + edName + " ");
+  });
+  if (!inEd.length) return null;
+  const num = (r.number || "").toLowerCase();
+  let pick;
+  if (m) {
+    const [, , sb, deck, yy] = m;
+    pick = inEd.find((p) => p.set === "wc" + yy && p.collector_number.toLowerCase().startsWith(deck.toLowerCase()) &&
+      /sb$/i.test(p.collector_number) === !!sb);
+  }
+  if (!pick) pick = inEd.find((p) => p.collector_number.toLowerCase() === num);
+  if (pick) return { card: pick, note: "" };
+  pick = inEd[0];
+  const where = `${pick.set.toUpperCase()} #${pick.collector_number}`;
+  const sets = new Set(inEd.map((p) => p.set));
+  // mais de um set no Scryfall e nada para desempatar (ano do Worlds, numero): fica em duvida
+  return { card: pick, note: sets.size > 1 ? `VERIFICAR: ${r.ligaSet.toUpperCase()} #${r.number} pode ser ${[...sets].join(", ")}; usada ${where}`
+    : `Obs: numero ${r.number} nao encontrado, usada ${where}` };
+}
+
 async function resolveAll(recs, { liga, scryfall, onProgress }) {
   const sets = recs.some((r) => !r.id) ? await scryfall.sets() : null;
   for (const r of recs) {
@@ -128,11 +171,22 @@ async function resolveAll(recs, { liga, scryfall, onProgress }) {
       if (c && (!r.name || r.tries[round].id || looseName(c, r.name))) { r.scry = c; r.via = r.tries[round]; }
     });
   }
+  // vindo da Liga e sem achar (ou achado so pelo nome, que da a impressao padrao, nao a da pessoa):
+  // tenta pelas impressoes da carta dentro da edicao da Liga
+  for (const r of recs) {
+    if (!r.ligaSet || (r.scry && !(r.via.name && !r.via.set))) continue;
+    const got = await rescue(r, { liga, scryfall });
+    if (!got) continue;
+    r.scry = got.card;
+    r.via = { set: got.card.set, collector_number: got.card.collector_number };
+    r.rescueNote = got.note;
+  }
 }
 
 function note(r) {
   const s = r.scry;
   if (!s) return "VERIFICAR: carta nao encontrada no Scryfall";
+  if (r.rescueNote != null) return r.rescueNote;
   const where = `${s.set.toUpperCase()} #${s.collector_number}`;
   if (r.via.name && !r.via.set) {
     const asked = [r.ligaSet || r.setCode || r.setAny || r.setName, r.number].filter(Boolean).join(" #");

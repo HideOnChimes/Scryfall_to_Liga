@@ -34,6 +34,15 @@ A coluna Comentario tem dois pesos, que `noteLevel()` em `conv.js` distingue pel
 - `VERIFICAR:` (nível `warn`): carta não encontrada, edição ainda não indexada, edição em dúvida (mais de uma possível, ou não informada). Conta como "para conferir", pinta a linha de amarelo e habilita o botão **Baixar sem erros**, que gera o arquivo sem essas linhas.
 - `Obs:` (nível `info`): a carta foi encontrada na edição certa, só sobrou uma observação: o número da Liga difere do Scryfall (normal em sets antigos e no The List, que a Liga numera do próprio jeito), ou o número pedido não existe no Scryfall e foi usada a impressão por nome. Não pinta a linha; só o texto do aviso fica discreto. Entra no arquivo dos dois botões.
 
+### LigaMagic → outros apps: edições que a Liga agrupa
+
+No sentido inverso (`formats.js`, `rescue()`), quando a carta vinda da Liga não é achada no Scryfall por edição + número (ou só pelo nome, que devolve a impressão padrão), o site busca todas as impressões da carta (`/cards/search` com `include:extras`, senão os World Championship Decks não aparecem) e filtra pelas que pertencem à edição da Liga:
+
+- Edição da Liga que junta vários sets do Scryfall: "World Championship Decks" (`wc97`…`wc04`), "Magic Player Rewards" (`p01`…`p11`), cada drop de Secret Lair (`sld`). O nome da Liga tem que ser o começo do nome do set no Scryfall ("World Championship Decks 2002").
+- Nome parcial: "Stellar Sights" dentro de "Edge of Eternities: Stellar Sights".
+- Nos World Championship a Liga põe o deck no nome: `Phantom Nishoba-SB (BK-02)` = sideboard do deck de Brian Kibler no Worlds 2002 = `wc02` #`bk140sb`. O site lê `(XX-YY)` e `-SB` e escolhe a impressão com set `wcYY`, número começando por `xx` e terminando (ou não) em `sb`.
+- Senão, decide pelo número; se nem o número bater e só houver um set possível, marca `Obs`; com mais de um set possível, `VERIFICAR`.
+
 ### The List (`plst`)
 
 O Scryfall numera The List como `APC-105` (sigla do set de origem + número de lá). A Liga tem a edição "The List" (`plist`) com numeração própria e só parte das cartas. A busca normal acha pelo nome (sem aviso de número, já que nunca bate). Quando a carta não está lá, `findViaOrigin` pede ao Scryfall a impressão do set de origem (`/cards/collection` com `{set: "apc", collector_number: "105"}`) e procura essa na Liga (Apocalypse #105), marcando `Obs: The List nao tem essa carta na Liga, usada Apocalypse #105`. Vale para qualquer set cujo número tenha o formato `SIGLA-NUMERO` com sigla conhecida pelo Scryfall.
