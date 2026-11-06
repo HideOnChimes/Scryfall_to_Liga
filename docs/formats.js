@@ -138,7 +138,7 @@ function note(r) {
     const asked = [r.ligaSet || r.setCode || r.setAny || r.setName, r.number].filter(Boolean).join(" #");
     return asked ? `VERIFICAR: ${asked} nao encontrado, usada ${where}` : `VERIFICAR: edicao nao informada, usada ${where}`;
   }
-  if (r.via.name && r.number) return `VERIFICAR: numero ${r.number} nao encontrado, usada ${where}`;
+  if (r.via.name && r.number) return `Obs: numero ${r.number} nao encontrado, usada ${where}`; // edicao certa: aviso leve
   return "";
 }
 

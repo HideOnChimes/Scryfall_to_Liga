@@ -81,6 +81,8 @@ table { border-collapse: collapse; width: 100%; font-size: .86rem; }
 th, td { padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
 th { position: sticky; top: 0; background: var(--surface); font-weight: 600; }
 tr.warn td { background: var(--warn-bg); color: var(--warn-text); }
+/* "Obs": carta encontrada, so uma observacao; nao pinta a linha, so o texto do aviso fica discreto */
+tr.info td.comment { color: var(--muted); font-style: italic; }
 td.comment { white-space: normal; min-width: 260px; }
 /* tabela editavel */
 .edit-hint { color: var(--muted); font-size: .85rem; margin: 0 0 10px; }

@@ -19,6 +19,16 @@ const LIGA_COLOR = { 2: "B", 3: "G", 4: "L", 5: "M", 6: "R", 7: "U", 8: "W", 9: 
 const PROMO_TYPES = new Set(["prerelease", "promopack", "playpromo", "datestamped", "stamped", "buyabox", "bundle",
   "storechampionship", "gameday", "release", "openhouse", "planeswalkerstamped"]);
 
+// numero do Scryfall que aponta o set de origem ("APC-105" em The List)
+const ORIGIN_NUM = /^([a-z0-9]{2,6})-([a-z0-9]+)$/i;
+
+// Avisos na coluna Comentario tem dois pesos: "VERIFICAR:" (carta nao encontrada ou edicao em duvida,
+// precisa conferir) e "Obs:" (carta encontrada, so uma observacao, ex.: numero da Liga difere).
+export function noteLevel(note) {
+  if (!note) return "";
+  return /^verificar\b/i.test(note.trim()) ? "warn" : "info";
+}
+
 // ---------------------------------------------------------------- texto
 const ascii = (s) => (s || "").normalize("NFKD").replace(/[^\x00-\x7f]/g, "");
 
@@ -187,8 +197,10 @@ export class Liga {
     if (byNum.length) return { hit: hits[0], cands, note: "", missing };
     // so o nome bateu: normal em sets antigos (Liga numera do proprio jeito)
     const eds = new Set(byName.map((h) => h[0].id));
-    return { hit: hits[0], cands, missing,
-      note: eds.size > 1 ? "numero diferente, mais de uma edicao possivel" : "numero da Liga difere do Scryfall" };
+    if (eds.size > 1) return { hit: hits[0], cands, missing, note: "numero diferente, mais de uma edicao possivel" };
+    // numero "APC-105" (The List): a Liga numera a edicao do proprio jeito, entao nunca bate; nao e aviso
+    if (ORIGIN_NUM.test(scry.collector_number || "")) return { hit: hits[0], cands, missing, note: "" };
+    return { hit: hits[0], cands, missing, note: "numero da Liga difere do Scryfall", light: true };
   }
 
   rank(hits, foil, num, lang = "en") {
@@ -227,6 +239,20 @@ export class Liga {
       }
     }
     return null;
+  }
+
+  // The List (plst) e parecidos: o Scryfall numera "APC-105" (set de origem + numero de la). A Liga tem
+  // a edicao "The List" com numeracao propria e so parte das cartas. Quando a carta nao esta la,
+  // usa a impressao do set de origem (Apocalypse #105), que e a mesma carta.
+  async findViaOrigin(scry, foil, scryfall) {
+    const m = ORIGIN_NUM.exec(scry.collector_number || "");
+    if (!m || !scryfall?.sets) return null;
+    const set = m[1].toLowerCase();
+    if (set === scry.set.toLowerCase() || !(await scryfall.sets()).codes.has(set)) return null;
+    const [orig] = await scryfall.collection([{ set, collector_number: m[2] }]);
+    if (!orig) return null;
+    const found = await this.find(orig, foil);
+    return found.hit ? { ...found, origin: orig } : null;
   }
 
   // lista de texto com sigla da Liga ("1 Bolg's Company [SCHOB]"): procura direto na edicao
@@ -476,12 +502,18 @@ async function convertScry(liga, scry, { qty, quality, lang, foil, scryfall }) {
     (scry.set.toLowerCase().startsWith("p") && liga.byAcr.has(scry.set.toLowerCase().slice(1)));
   let found = await liga.find(scry, foil);
   if (!found.hit) found = (await liga.findViaPrints(scry, foil, scryfall)) || found;
-  const { hit, cands, note, missing } = found;
+  if (!found.hit) found = (await liga.findViaOrigin(scry, foil, scryfall)) || found;
+  const { hit, cands, note, missing, light, origin } = found;
   if (hit && (hit[0].name || "").toLowerCase().includes("promo")) promo = false; // ja e edicao "(Promos)"
   const extras = [foil && "Foil", promo && "Promo"].filter(Boolean);
   const ref = `Scryfall ${scry.set} #${scry.collector_number}`;
   if (hit) {
-    const comment = note ? `VERIFICAR: ${note} (${ref})` : "";
+    let comment = note ? `${light ? "Obs" : "VERIFICAR"}: ${note} (${ref})` : "";
+    // veio do set de origem: a Liga nao tem essa carta em "The List"; e a mesma carta, so muda a edicao
+    if (origin) {
+      const via = `${scry.set_name} nao tem essa carta na Liga, usada ${origin.set_name} #${origin.collector_number}`;
+      comment = note && !light ? `VERIFICAR: ${note}; ${via} (${ref})` : `Obs: ${via} (${ref})`;
+    }
     return emit(rowFromHit(hit[0], hit[1], scry), qty, quality, lang, extras, comment);
   }
   const why = missing.length ? `edicao ainda nao indexada no site: ${missing.join(", ")}` : "nao encontrada na Liga";
@@ -544,7 +576,8 @@ export async function convertCSV(text, { liga, scryfall, onProgress }) {
         ? `VERIFICAR: edicao/numero nao encontrados (${[r.set || r.setAny || r.setName, r.number].filter(Boolean).join(" #")}), usada ${row[2]}`
         : `VERIFICAR: edicao nao informada, usada ${row[2]}`;
     } else if (!row[12] && r.via.name && r.number) {
-      row[12] = `VERIFICAR: numero ${r.number} nao encontrado no Scryfall, usada ${row[2]} #${row[11]}`;
+      // edicao certa, so o numero nao bateu no Scryfall: a carta foi encontrada, e aviso leve
+      row[12] = `Obs: numero ${r.number} nao encontrado no Scryfall, usada ${row[2]} #${row[11]}`;
     }
     out.push(row);
   }
