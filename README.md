@@ -16,7 +16,7 @@ Converta sua coleção de Magic entre LigaMagic, ManaBox, Moxfield, Scryfall e o
 - Converte vários arquivos de uma vez e baixa tudo em `.zip`.
 - Abre arquivos do PC (ou arrastando) e do Google Drive.
 - Mostra uma prévia editável antes de baixar: dá para corrigir células, apagar ou adicionar linhas.
-- Marca com `VERIFICAR` as cartas que não deu para identificar com certeza, e com `Obs` as que foram encontradas mas merecem uma nota (ex.: a Liga numera a edição de outro jeito). Com avisos, dá para baixar separado: só as linhas sem aviso, só as observações ou só os erros.
+- Marca com `VERIFICAR` as cartas que não deu para identificar com certeza, e com `Obs` as que foram encontradas mas merecem uma nota (ex.: a Liga numera a edição de outro jeito). Carta achada noutra edição (ex.: The List → set de origem) fica em amarelo. Com avisos, dá para baixar separado: só as linhas sem aviso, só os avisos leves, só as de edição trocada ou só os erros.
 - Site em português, inglês e espanhol.
 
 ## Privacidade
