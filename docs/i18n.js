@@ -79,7 +79,13 @@ const STRINGS = {
     "help.steps": `<li>Exporte a coleção em CSV do seu app (LigaMagic, ManaBox, Moxfield, Deckbox, Dragon Shield, TCGplayer…) ou de uma busca do Scryfall. Ou monte uma lista de texto, uma carta por linha.</li>
       <li>Selecione um ou vários arquivos (do computador ou do Google Drive). O formato de origem de cada um é detectado sozinho.</li>
       <li>Escolha o formato de destino e clique em <strong>Converter</strong>.</li>
-      <li>Confira as linhas marcadas com <span class="tag">VERIFICAR</span> (vermelho: carta não encontrada ou edição em dúvida) e as amarelas (<em>Obs: edicao trocada</em>: a carta foi encontrada, mas noutra edição, ex.: The List → set de origem). As demais <em>Obs</em> são avisos leves (ex.: a Liga numera a edição de outro jeito). Dá para editar a tabela antes de baixar os arquivos, um a um ou todos num .zip. Com avisos, também dá para baixar separado: só as linhas sem aviso, só os avisos leves, só as de edição trocada ou só os erros.</li>
+      <li>Confira os avisos da tabela. São três tipos:
+        <ul>
+          <li><span class="tag">VERIFICAR</span> (linha vermelha): carta não encontrada ou edição em dúvida. Precisa conferir.</li>
+          <li><span class="tag set">Edição trocada</span> (linha amarela): a carta foi encontrada, mas noutra edição. Ex.: The List não tem essa carta na Liga, então ela vai como a edição de origem (Apocalypse). Confira se serve.</li>
+          <li><em>Obs</em> (sem cor): carta encontrada, só uma observação. Ex.: a Liga numera a edição de outro jeito.</li>
+        </ul>
+        Dá para editar a tabela antes de baixar os arquivos, um a um ou todos num .zip. Com avisos, também dá para baixar separado: só as linhas sem aviso, só os avisos leves, só as de edição trocada ou só os erros.</li>
       <li>Importe no app de destino. Na LigaMagic: <em>Minha Coleção → Importar</em>.</li>`,
     "help.csvTitle": "CSVs aceitos",
     "help.csvText": `O site reconhece as colunas automaticamente, inclusive em planilhas com cabeçalho em português e separadas por <code>;</code>.
@@ -176,7 +182,13 @@ const STRINGS = {
     "help.steps": `<li>Export your collection as CSV from your app (LigaMagic, ManaBox, Moxfield, Deckbox, Dragon Shield, TCGplayer…) or from a Scryfall search. Or write a text list, one card per line.</li>
       <li>Choose one or more files (from your computer or Google Drive). Each file's source format is detected automatically.</li>
       <li>Pick the target format and click <strong>Convert</strong>.</li>
-      <li>Review the rows marked <span class="tag">VERIFICAR</span> (red: card not found or set in doubt) and the yellow ones (<em>Obs: edicao trocada</em>: the card was found, but in another set, e.g. The List → original set). Other <em>Obs</em> rows are light warnings (e.g. LigaMagic numbers the set differently). You can edit the table before downloading the files, one by one or all in a .zip. When there are warnings, you can also download them apart: only the rows without warnings, only the light warnings, only the set changes or only the errors.</li>
+      <li>Review the warnings in the table. There are three kinds:
+        <ul>
+          <li><span class="tag">VERIFICAR</span> (red row): card not found or set in doubt. Needs a check.</li>
+          <li><span class="tag set">Set changed</span> (yellow row): the card was found, but in another set. E.g. LigaMagic does not have that card in The List, so it goes as the original set (Apocalypse). Check if that works for you.</li>
+          <li><em>Obs</em> (no color): card found, just a note. E.g. LigaMagic numbers the set differently.</li>
+        </ul>
+        You can edit the table before downloading the files, one by one or all in a .zip. When there are warnings, you can also download them apart: only the rows without warnings, only the light warnings, only the set changes or only the errors.</li>
       <li>Import into the target app. On LigaMagic: <em>Minha Coleção → Importar</em>.</li>`,
     "help.csvTitle": "Supported CSVs",
     "help.csvText": `Columns are recognized automatically, including spreadsheets with Portuguese headers or separated by <code>;</code>.
@@ -273,7 +285,13 @@ const STRINGS = {
     "help.steps": `<li>Exporta tu colección en CSV desde tu app (LigaMagic, ManaBox, Moxfield, Deckbox, Dragon Shield, TCGplayer…) o desde una búsqueda de Scryfall. O escribe una lista de texto, una carta por línea.</li>
       <li>Elige uno o varios archivos (desde tu computadora o Google Drive). El formato de origen de cada uno se detecta solo.</li>
       <li>Elige el formato de destino y haz clic en <strong>Convertir</strong>.</li>
-      <li>Revisa las filas marcadas con <span class="tag">VERIFICAR</span> (rojo: carta no encontrada o edición en duda) y las amarillas (<em>Obs: edicao trocada</em>: la carta fue encontrada, pero en otra edición, ej.: The List → set de origen). Las demás <em>Obs</em> son avisos leves (ej.: LigaMagic numera la edición de otra forma). Puedes editar la tabla antes de descargar los archivos, uno por uno o todos en un .zip. Si hay avisos, también puedes descargar por separado: solo las filas sin aviso, solo los avisos leves, solo las de edición cambiada o solo los errores.</li>
+      <li>Revisa los avisos de la tabla. Hay tres tipos:
+        <ul>
+          <li><span class="tag">VERIFICAR</span> (fila roja): carta no encontrada o edición en duda. Hay que revisar.</li>
+          <li><span class="tag set">Edición cambiada</span> (fila amarilla): la carta fue encontrada, pero en otra edición. Ej.: LigaMagic no tiene esa carta en The List, así que va como la edición de origen (Apocalypse). Revisa si te sirve.</li>
+          <li><em>Obs</em> (sin color): carta encontrada, solo una observación. Ej.: LigaMagic numera la edición de otra forma.</li>
+        </ul>
+        Puedes editar la tabla antes de descargar los archivos, uno por uno o todos en un .zip. Si hay avisos, también puedes descargar por separado: solo las filas sin aviso, solo los avisos leves, solo las de edición cambiada o solo los errores.</li>
       <li>Importa en la app de destino. En LigaMagic: <em>Minha Coleção → Importar</em>.</li>`,
     "help.csvTitle": "CSVs aceptados",
     "help.csvText": `Las columnas se reconocen automáticamente, incluso en hojas con encabezados en portugués o separadas por <code>;</code>.
