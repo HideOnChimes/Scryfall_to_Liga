@@ -201,7 +201,7 @@ const LANG_CODE = { EN: "en", PT: "pt", DE: "de", ES: "es", FR: "fr", IT: "it", 
   TW: "zht", CS: "zhs", PH: "ph" };
 const LANG_NAME = { EN: "English", PT: "Portuguese", DE: "German", ES: "Spanish", FR: "French", IT: "Italian",
   JP: "Japanese", KO: "Korean", RU: "Russian", TW: "Chinese Traditional", CS: "Chinese Simplified", PH: "Phyrexian" };
-const MB_COND = { M: "mint", NM: "near_mint", SP: "light_played", MP: "played", HP: "poor", D: "damaged" };
+const MB_COND = { M: "mint", NM: "near_mint", SP: "slightly_played", MP: "played", HP: "poor", D: "damaged" };
 const MOX_COND = { M: "Mint", NM: "Near Mint", SP: "Lightly Played", MP: "Moderately Played", HP: "Heavily Played",
   D: "Damaged" };
 
@@ -280,7 +280,7 @@ export const ENUMS = {
   manabox: {
     4: ["normal", "foil", "etched"],
     5: ["common", "uncommon", "rare", "mythic", "special", "bonus"],
-    8: ["mint", "near_mint", "excellent", "good", "light_played", "played", "poor", "damaged"],
+    8: ["mint", "near_mint", "excellent", "good", "slightly_played", "light_played", "played", "poor", "damaged"],
     9: LANGS_CODE,
   },
   moxfield: {
