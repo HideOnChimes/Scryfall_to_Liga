@@ -45,8 +45,26 @@ LIGA_HEADER = ["Edicao (PTBR)", "Edicao (EN)", "Edicao (Sigla)", "Card (PT)", "C
                "Qualidade (M NM SP MP HP D)", "Idioma (BR EN DE ES FR IT JP KO RU TW)", "Raridade (M R U C)",
                "Cor (W U B R G M A L)", "Extras", "Card #", "Comentario"]
 
-QUALITY = {"mint": "M", "near_mint": "NM", "excellent": "SP", "good": "SP", "light_played": "SP",
-           "played": "MP", "poor": "HP", "damaged": "D"}
+# Condicao -> escala da Liga. Chaves normalizadas (minusculas, sem espaco/_/-), cobrindo
+# ManaBox (antigo light_played e novo slightly_played), Moxfield/TCG, Cardmarket e portugues.
+QUALITY = {
+    "m": "M", "mint": "M", "mt": "M", "nova": "M",
+    "nm": "NM", "nearmint": "NM", "quasenovo": "NM", "quasenova": "NM", "nmm": "NM", "nearmintmint": "NM",
+    "sp": "SP", "ex": "SP", "excellent": "SP", "excelente": "SP", "gd": "SP", "good": "SP", "boa": "SP",
+    "lp": "SP", "lightplayed": "SP", "lightlyplayed": "SP", "slightlyplayed": "SP", "goodlightlyplayed": "SP",
+    "lightlyplayedgood": "SP", "poucojogada": "SP", "poucojogado": "SP", "levementejogada": "SP",
+    "mp": "MP", "pl": "MP", "played": "MP", "moderatelyplayed": "MP", "moderatelyplayedplayed": "MP",
+    "jogada": "MP", "jogado": "MP", "moderadamentejogada": "MP",
+    "hp": "HP", "po": "HP", "poor": "HP", "heavilyplayed": "HP", "heavyplayed": "HP", "heavilyplayedpoor": "HP",
+    "muitojogada": "HP", "muitojogado": "HP", "ruim": "HP",
+    "d": "D", "dmg": "D", "damaged": "D", "danificada": "D", "danificado": "D",
+}
+
+
+def quality_of(cond):
+    """Normaliza o texto da condicao e devolve a sigla da Liga (NM se vazio/desconhecido)."""
+    key = re.sub(r"[^a-z0-9]", "", str(cond or "").lower())
+    return QUALITY.get(key, "NM")
 LANG = {"en": "EN", "pt": "BR", "de": "DE", "es": "ES", "fr": "FR", "it": "IT", "ja": "JP", "ko": "KO",
         "ru": "RU", "zht": "TW", "zhs": "CS", "ph": "PH"}
 # ManaBox usa codigos proprios para alguns idiomas; normaliza para o codigo do Scryfall
@@ -485,7 +503,7 @@ def convert(src, dst, refresh=False, db=None, replace=False, schema=None):
             warn.append(f"{name}: nao encontrada na Liga ({scry['set']} #{scry['collector_number']})")
         matched.append((r, scry, hit, note))
         out.append([ed_pt, ed_en, sigla, card_pt, card_en, r.get("Quantity", "1"),
-                    QUALITY.get(r.get("Condition", ""), "NM"),
+                    quality_of(r.get("Condition", "")),
                     LANG.get(lang_code(r, scry), "EN"),
                     rar, col, ", ".join(extras), num, comment])
     with open(dst, "w", encoding="utf-8", newline="") as f:
@@ -669,7 +687,7 @@ def db_import(dbname, source, matched, liga, replace=False, schema=None):
             cur_ = r.get("Purchase price currency") or "BRL"
             codes = db_extras(r, scry, hit, extras_tbl, liga)
             key = ",".join(codes)
-            cond = QUALITY.get(r.get("Condition", ""), "NM")
+            cond = quality_of(r.get("Condition", ""))
             # lote: cria se nao existe; purchase_cost so em lote novo (depois e do usuario)
             cur.execute("""
                 INSERT INTO inventory (card_print_id, language_id, condition, extras_key, quantity,

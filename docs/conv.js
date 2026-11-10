@@ -431,9 +431,20 @@ const COLS = {
   cond: ["condition", "condicao", "qualidade"],
   lang: ["language", "lang", "idioma"],
 };
-export const COND = { mint: "M", m: "M", nearmint: "NM", nm: "NM", quasenovo: "NM", excellent: "SP", ex: "SP", good: "SP",
-  lightplayed: "SP", lightlyplayed: "SP", goodlightlyplayed: "SP", lp: "SP", sp: "SP", played: "MP",
-  moderatelyplayed: "MP", mp: "MP", poor: "HP", heavilyplayed: "HP", hp: "HP", damaged: "D", d: "D" };
+// Condicao -> escala da Liga. Chaves ja passam por colKey (minusculas, sem espaco/_/-).
+// Cobre ManaBox (antigo light_played e novo slightly_played), Moxfield/TCG, Cardmarket e portugues.
+export const COND = {
+  m: "M", mint: "M", mt: "M", nova: "M",
+  nm: "NM", nearmint: "NM", quasenovo: "NM", quasenova: "NM", nmm: "NM", nearmintmint: "NM",
+  sp: "SP", ex: "SP", excellent: "SP", excelente: "SP", gd: "SP", good: "SP", boa: "SP",
+  lp: "SP", lightplayed: "SP", lightlyplayed: "SP", slightlyplayed: "SP", goodlightlyplayed: "SP",
+  lightlyplayedgood: "SP", poucojogada: "SP", poucojogado: "SP", levementejogada: "SP",
+  mp: "MP", pl: "MP", played: "MP", moderatelyplayed: "MP", moderatelyplayedplayed: "MP",
+  jogada: "MP", jogado: "MP", moderadamentejogada: "MP",
+  hp: "HP", po: "HP", poor: "HP", heavilyplayed: "HP", heavyplayed: "HP", heavilyplayedpoor: "HP",
+  muitojogada: "HP", muitojogado: "HP", ruim: "HP",
+  d: "D", dmg: "D", damaged: "D", danificada: "D", danificado: "D",
+};
 const LANG_NAMES = { english: "EN", ingles: "EN", portuguese: "PT", portugues: "PT", portuguesebrazil: "PT", brazilianportuguese: "PT", br: "PT",
   german: "DE", spanish: "ES", french: "FR", italian: "IT", japanese: "JP", jp: "JP", korean: "KO", russian: "RU",
   tw: "TW", cs: "CS", chinesetraditional: "TW", traditionalchinese: "TW", chinesesimplified: "CS", simplifiedchinese: "CS", phyrexian: "PH" };
